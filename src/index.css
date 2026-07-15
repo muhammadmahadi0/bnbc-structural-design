@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800;
+  }
+  input, select, textarea {
+    @apply border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition;
+  }
+  label {
+    @apply block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-5;
+  }
+  .card-header {
+    @apply flex items-center gap-2 text-lg font-bold text-slate-800 mb-4 pb-3 border-b border-slate-100;
+  }
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition shadow-sm text-sm;
+  }
+  .btn-secondary {
+    @apply bg-slate-600 hover:bg-slate-700 text-white font-medium px-5 py-2.5 rounded-lg transition shadow-sm text-sm;
+  }
+  .btn-success {
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2.5 rounded-lg transition shadow-sm text-sm;
+  }
+  .input-group {
+    @apply flex flex-col gap-1;
+  }
+  .result-value {
+    @apply text-lg font-bold text-blue-700 font-mono;
+  }
+  .result-label {
+    @apply text-xs text-slate-500 uppercase tracking-wider;
+  }
+  .stat-box {
+    @apply bg-slate-50 rounded-lg p-3 border border-slate-200;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+  .badge-warning {
+    @apply bg-amber-100 text-amber-800;
+  }
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+  }
+  .tab {
+    @apply px-4 py-2 text-sm font-medium rounded-lg transition cursor-pointer;
+  }
+  .tab-active {
+    @apply bg-blue-600 text-white shadow-sm;
+  }
+  .tab-inactive {
+    @apply bg-slate-100 text-slate-600 hover:bg-slate-200;
+  }
+}
