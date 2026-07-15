@@ -1,0 +1,11 @@
+# Netlify deployment configuration for BNBC 2020 Structural Design Suite
+# SPA redirect: all routes → index.html
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
