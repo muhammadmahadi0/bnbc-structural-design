@@ -4,14 +4,20 @@
 
 **A comprehensive web application for reinforced concrete building structural design**
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/placeholder/deploy-status)](https://bnbc-structural-design.netlify.app)
+**[🌐 structuralbd.netlify.app](https://structuralbd.netlify.app)**
+
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss)
+![BNBC](https://img.shields.io/badge/BNBC-2020-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 **React · Vite · Tailwind CSS · BNBC 2020 · ACI 318-19**
 
+[Live Demo](https://structuralbd.netlify.app) •
 [Features](#-features) •
 [Modules](#-modules) •
 [Quick Start](#-quick-start) •
-[Demo](#-deployment) •
 [BNBC Reference](#-bnbc-2020-references)
 
 </div>
@@ -31,7 +37,9 @@
 - ✅ **Column Design** — Tied/spiral axial capacity (φPn), min/max ρ, biaxial Bresler check
 - ✅ **Rebar Detailing** — Optimal bar selection (Ø10–Ø40), schedule table, spacing, weight, concrete volume
 - ✅ **Bangladesh-Specific** — 10 seismic regions (Dhaka, Comilla, Sylhet, etc.), 5 site classes (SA–SE), wind zones
-- ✅ **LRFD Load Combos** — 1.4D+1.6L, 1.2D+1.6L+0.5W, 1.2D+1.0E+1.0L, 0.9D+1.0W
+- ✅ **Dark Mode** — Toggle at bottom-right corner, persists via localStorage
+- ✅ **Dual Units** — MPa ↔ psi/ksi, mm ↔ in, m ↔ ft, kg ↔ lb, m³ ↔ ft³
+- ✅ **Mobile Responsive** — Hamburger sidebar, stacked grids on small screens
 
 ---
 
@@ -40,7 +48,7 @@
 | Module | Description |
 |---|---|
 | **📊 Dashboard** | Project overview, material stats, reinforcement ratios, BNBC quick reference |
-| **🧱 Materials** | Concrete grade (f'c 16–41.4 MPa), steel grade (fy 300–550 MPa), clear cover per BNBC Table 6.2.6 |
+| **🧱 Materials** | Concrete grade (f'c 16–40 MPa), steel grade (fy 300–550 MPa), clear cover per BNBC Table 6.2.6 |
 | **⚖️ Loads** | Floor finishes, partition walls, 23 occupancy live loads, wind (3 zones × 4 exposures), seismic (10 regions × 5 site classes) |
 | **🏛️ Slab** | Min thickness (l/20, l/24, l/28, l/10), moment coefficients, tension-controlled As, temperature steel |
 | **📐 Beam** | Flexural reinforcement, shear stirrups (φVc, Vs, spacing), bar layout, quantity estimate |
@@ -69,6 +77,16 @@ npm run build
 ---
 
 ## 🌐 Deployment
+
+### 🔴 Live Site
+
+<p align="center">
+  <a href="https://structuralbd.netlify.app">
+    <strong>🌐 structuralbd.netlify.app</strong>
+  </a>
+  <br>
+  <sub>Deployed on Netlify — automatic deploys from GitHub</sub>
+</p>
 
 ### Netlify (recommended)
 
@@ -171,4 +189,6 @@ bnbc-structural-design/
   <sub>Built with ❤️ for the Bangladesh structural engineering community</sub>
   <br>
   <sub>BNBC 2020 · ACI 318-19 · Bangladesh National Building Code</sub>
+  <br>
+  <a href="https://structuralbd.netlify.app">🌐 structuralbd.netlify.app</a>
 </div>
