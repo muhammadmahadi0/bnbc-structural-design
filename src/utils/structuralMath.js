@@ -54,13 +54,13 @@ export function rhoMax(fc, fy) {
 
 /** Minimum reinforcement ratio ρ_min (flexure) — ACI 9.6.1.2 */
 export function rhoMin(fy) {
-  return Math.max(1.4 / fy, 0.25 * Math.sqrt(28) / fy);
+  return 1.4 / fy;
 }
 
 /** Minimum flexural steel area — ACI 9.6.1.2  (mm²) */
 export function AsMin(fc, fy, b, d) {
-  const rMin = rhoMin(fy);
-  return Math.max(rMin * b * d, 0.25 * Math.sqrt(fc) / fy * b * d);
+  const rho = Math.max(1.4 / fy, 0.25 * Math.sqrt(fc) / fy);
+  return rho * b * d;
 }
 
 /** Clear cover → effective depth helper */
@@ -371,7 +371,7 @@ export function beamShearDesign(Vu_kN, b, d, fc, fy, stirrupLegs = 2, stirrupDia
  * Spiral:      φPn_max = 0.85 × φ × [0.85 fc (Ag − Ast) + fy × Ast]
  */
 export function columnAxialCapacity(b, h, fc, fy, Ast, type = 'tied') {
-  const phi = 0.65; // compression-controlled (tied)
+  const phi = type === 'spiral' ? 0.75 : 0.65; // BNBC/ACI: spiral=0.75, tied=0.65
   const Ag = b * h;
   const Pn = 0.85 * fc * (Ag - Ast) + fy * Ast;
   const reduction = type === 'spiral' ? 0.85 : 0.80;

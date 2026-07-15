@@ -45,7 +45,7 @@ export default function MaterialSelector() {
                 handleChange('fc', Number(e.target.value)); handleChange('concreteLabel', g?.label || '');
               }}>
                 {CONCRETE_GRADES.map((g) => (
-                  <option key={g.fc} value={g.fc}>{g.label} ({mpaToPsi(g.fc)} psi)</option>
+                  <option key={g.fc} value={g.fc}>{g.label}</option>
                 ))}
               </select>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">

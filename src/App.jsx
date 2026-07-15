@@ -71,10 +71,10 @@ export default function App() {
 
   // Materials state (stored in MPa + mm internally)
   const [materials, setMaterials] = useState({
-    fc: 27.6,
+    fc: 28,
     fy: 420,
     cover: 30,
-    concreteLabel: 'C-28 / 4000 psi (27.6 MPa)',
+    concreteLabel: 'C-28 (28 MPa ≈ 4060 psi)',
     steelLabel: 'GR-420 / 60 ksi (420 MPa)',
     coverLabel: 'Beam — 30 mm (interior)',
   });

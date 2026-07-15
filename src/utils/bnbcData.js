@@ -10,13 +10,13 @@
 // 1.  CONCRETE GRADES (BNBC 2020 Table 6.2.1)
 // ──────────────────────────────────────────────
 export const CONCRETE_GRADES = [
-  { label: 'C-16 / 3000 psi', fc: 16 },
-  { label: 'C-20 / 3000 psi', fc: 20.7 },
-  { label: 'C-24 / 3500 psi', fc: 24.1 },
-  { label: 'C-28 / 4000 psi', fc: 27.6 },
-  { label: 'C-32 / 4500 psi', fc: 31.6 },
-  { label: 'C-35 / 5000 psi', fc: 34.5 },
-  { label: 'C-40 / 5500 psi', fc: 41.4 },
+  { label: 'C-16 (16 MPa ≈ 2300 psi)', fc: 16 },
+  { label: 'C-20 (20 MPa ≈ 2900 psi)', fc: 20 },
+  { label: 'C-24 (24 MPa ≈ 3480 psi)', fc: 24 },
+  { label: 'C-28 (28 MPa ≈ 4060 psi)', fc: 28 },
+  { label: 'C-32 (32 MPa ≈ 4640 psi)', fc: 32 },
+  { label: 'C-35 (35 MPa ≈ 5070 psi)', fc: 35 },
+  { label: 'C-40 (40 MPa ≈ 5800 psi)', fc: 40 },
 ];
 
 // ──────────────────────────────────────────────
