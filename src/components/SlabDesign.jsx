@@ -139,7 +139,7 @@ export default function SlabDesign() {
               <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                 <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-1">🌡️ Temperature & Shrinkage Steel</p>
                 <p className="text-sm">A<sub>s,temp</sub> = <strong>{As_temp.toFixed(0)} mm²/m</strong> (ACI 24.4)</p>
-                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">Ø10mm @ {(Math.PI * 5 * 5 / (As_temp / 1000) * 1000).toFixed(0)} mm c/c ({(Math.PI * 5 * 5 / (As_temp / 1000) * 1000 / 25.4).toFixed(1)} in)</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">Ø10mm @ {(As_temp > 0 ? (Math.PI * 25 / (As_temp / 1000) * 1000) : 200).toFixed(0)} mm c/c ({((As_temp > 0 ? (Math.PI * 25 / (As_temp / 1000) * 1000) : 200) / 25.4).toFixed(1)} in)</p>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 flex justify-between items-center">

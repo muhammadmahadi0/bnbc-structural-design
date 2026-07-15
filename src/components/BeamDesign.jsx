@@ -89,7 +89,7 @@ export default function BeamDesign() {
           <h3 className="card-header">📊 Design Results</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="stat-box"><p className="result-label">Section</p><p className="result-value">{bw.val}×{bh.val} {bw.unit}</p><p className="text-xs text-slate-400">d = {bd.val} {bd.unit}</p></div>
-            <div className="stat-box"><p className="result-label">b/d ratio</p><p className="result-value">{(b / d).toFixed(2)}</p></div>
+            <div className="stat-box"><p className="result-label">b/d ratio</p><p className="result-value">{((b / d) || 0).toFixed(2)}</p></div>
             <div className="stat-box"><p className="result-label">ρ</p><p className="result-value">{flexure ? `${(flexure.rho * 100).toFixed(2)}%` : '—'}</p></div>
             <div className="stat-box"><p className="result-label">A<sub>s,min</sub></p><p className="result-value">{flexure ? flexure.As_min.toFixed(0) : '—'}<span className="text-sm font-normal"> mm²</span></p></div>
           </div>
@@ -109,7 +109,7 @@ export default function BeamDesign() {
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 border border-slate-200 dark:border-slate-600">
                     <p className="text-xs text-slate-600 dark:text-slate-400">a / c</p>
-                    <p className="text-lg font-bold">{flexure.a.toFixed(0)} / {(flexure.a / 0.85).toFixed(0)} mm ({(flexure.a / 25.4).toFixed(2)} / {((flexure.a / 0.85) / 25.4).toFixed(2)} in)</p>
+                    <p className="text-lg font-bold">{(flexure?.a || 0).toFixed(0)} / {((flexure?.a || 0) / 0.85).toFixed(0)} mm ({((flexure?.a || 0) / 25.4).toFixed(2)} / {((flexure?.a || 0) / 0.85 / 25.4).toFixed(2)} in)</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -147,7 +147,7 @@ export default function BeamDesign() {
                 <div className="stat-box"><p className="result-label">V<sub>c</sub></p><p className="result-value">{shear.Vc.toFixed(1)}<span className="text-sm font-normal"> kN</span></p></div>
                 <div className="stat-box"><p className="result-label">φV<sub>c</sub></p><p className="result-value">{shear.phiVc.toFixed(1)}<span className="text-sm font-normal"> kN</span></p></div>
                 <div className="stat-box"><p className="result-label">Stirrup</p><p className="result-value">{shear.stirrup}</p></div>
-                <div className="stat-box"><p className="result-label">Spacing</p><p className="result-value">{shear.spacing} mm ({(shear.spacing / 25.4).toFixed(1)} in)</p></div>
+                <div className="stat-box"><p className="result-label">Spacing</p><p className="result-value">{(shear?.spacing || 0)} mm ({((shear?.spacing || 0) / 25.4).toFixed(1)} in)</p></div>
               </div>
             )}
             {shear && !shear.error && <div className="mt-2 text-xs"><span className={`badge ${shear.designStatus.includes('Minimum') ? 'badge-warning' : 'badge-success'}`}>{shear.designStatus}</span></div>}
@@ -156,8 +156,8 @@ export default function BeamDesign() {
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 mt-4">
             <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-2">📦 Estimate ({bSpan.val} {bSpan.unit} beam)</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-              <div><span className="text-slate-500 dark:text-slate-400">Steel</span><p className="font-bold font-mono">{weight.steelWeight_kg} kg ({(weight.steelWeight_kg * 2.20462).toFixed(1)} lb)</p></div>
-              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono">{weight.concreteVolume_m3} m³ ({(weight.concreteVolume_m3 * 35.315).toFixed(2)} ft³)</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Steel</span><p className="font-bold font-mono">{(weight?.steelWeight_kg ?? 0)} kg ({((weight?.steelWeight_kg ?? 0) * 2.20462).toFixed(1)} lb)</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono">{(weight?.concreteVolume_m3 ?? 0)} m³ ({((weight?.concreteVolume_m3 ?? 0) * 35.315).toFixed(2)} ft³)</p></div>
               <div><span className="text-slate-500 dark:text-slate-400">ρ<sub>g</sub></span><p className="font-bold font-mono">{flexure ? `${(flexure.rho * 100).toFixed(2)}%` : '—'}</p></div>
             </div>
           </div>

@@ -65,7 +65,7 @@ export function AsMin(fc, fy, b, d) {
 
 /** Clear cover → effective depth helper */
 export function effectiveDepth(h_total, cover, barDia, stirrupDia = 0) {
-  return h_total - cover - stirrupDia - barDia / 2;
+  return Math.max(h_total - cover - stirrupDia - barDia / 2, 1);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -216,16 +216,20 @@ export function slabBendingMoment(supportType, w_u, span_m) {
  * Iterative solution for tension-controlled section
  */
 export function slabRequiredSteel(Mu_kNm, b = 1000, d, fc, fy) {
-  const Mu = Mu_kNm * 1e6; // kN·m → N·mm
-  const phi = 0.9; // flexure
+  const Mu = Math.abs(Mu_kNm) * 1e6;
+  const phi = 0.9;
+  if (!b || !d || !fc || !fy || b <= 0 || d <= 1 || fc <= 0 || fy <= 0)
+    return { As_req: 0, As_min: 0, As_max: 0, a: 0, c: 0, phi, netTensileStrain: 0, isTensionControlled: false, ratio: 0, error: 'Invalid section' };
 
-  // Initial estimate: assume a = 0.2d
   let a = 0.2 * d;
   let As = 0;
   let iter = 0;
 
   while (iter < 50) {
-    const As_new = Mu / (phi * fy * (d - a / 2));
+    const denom = phi * fy * (d - a / 2);
+    if (denom <= 0) break;
+    const As_new = Mu / denom;
+    if (!isFinite(As_new)) break;
     const a_new = As_new * fy / (0.85 * fc * b);
     if (Math.abs(a_new - a) < 0.5) {
       As = As_new;
@@ -275,6 +279,8 @@ export function beamFlexuralDesign(Mu_kNm, b, h, cover, stirrupDia, fc, fy) {
  * Required As based on Mu (direct formula — doubly checked)
  */
 export function beamAsFromMu(Mu_kNm, b, d, fc, fy) {
+  if (!b || !d || !fc || !fy || b <= 0 || d <= 0 || fc <= 0 || fy <= 0)
+    return { As_req: 0, As_min: 0, As_max: 0, a: 0, d: d || 0, rho: 0, error: 'Invalid input dimensions' };
   const Mu = Mu_kNm * 1e6;
   const phi = 0.9;
 
@@ -306,6 +312,8 @@ export function beamAsFromMu(Mu_kNm, b, d, fc, fy) {
  * Spacing = Av × fy × d / Vs
  */
 export function beamShearDesign(Vu_kN, b, d, fc, fy, stirrupLegs = 2, stirrupDia = 10) {
+  if (!b || !d || b <= 0 || d <= 0)
+    return { Vc: 0, phiVc: 0, stirrup: `${stirrupDia}mm-${stirrupLegs} legs`, Av: 0, spacing: 0, designStatus: 'Invalid section', Vs_provided: 0, error: 'Invalid section dimensions' };
   const phi = 0.75; // shear
   const lambda = 1.0; // normal weight concrete
   const Vc = 0.17 * lambda * Math.sqrt(fc) * b * d / 1000; // kN
@@ -420,6 +428,8 @@ export function biaxialInteraction(Mux, Muy, phiMnx, phiMny, alpha = 1.5) {
  * Returns the most economical combination
  */
 export function selectRebar(As_required, barDiaOptions = [10, 12, 16, 20, 25], nb_max = 10) {
+  As_required = Math.max(As_required || 0, 0);
+  if (As_required <= 0) return { bar: '—', dia: 10, area: 78.5, n: 1, As_provided: 78.5, As_required: 0, excess: 78.5, excessPct: 0 };
   const available = REBAR_SIZES.filter((r) => barDiaOptions.includes(r.dia));
   if (available.length === 0) return null;
 
@@ -452,12 +462,13 @@ export function selectRebar(As_required, barDiaOptions = [10, 12, 16, 20, 25], n
  * Rebar spacing given a bar diameter, n bars, and section width
  */
 export function barSpacing(b, cover, stirrupDia, barDia, nBars, layers = 1) {
-  const barsPerLayer = Math.ceil(nBars / layers);
-  const clearWidth = b - 2 * cover - 2 * stirrupDia - barDia;
+  b = Math.max(b, 50);
+  const barsPerLayer = Math.max(Math.ceil(nBars / layers), 1);
+  const clearWidth = Math.max(b - 2 * cover - 2 * stirrupDia - barDia, 1);
   const nGaps = barsPerLayer - 1;
-  const s = nGaps > 0 ? clearWidth / nGaps : b;
+  const s = nGaps > 0 ? clearWidth / nGaps : Math.min(b, 300);
   return {
-    clearSpacing: r2(s - barDia, 1),
+    clearSpacing: r2(Math.max(s - barDia, 0), 1),
     centerSpacing: r2(s, 1),
     nPerLayer: barsPerLayer,
     layers,
@@ -503,35 +514,30 @@ export function concreteVolume(length_m, width_m, thickness_m) {
  * Full beam quantity estimate
  */
 export function beamEstimate(b, h, length_m, fc, fy, Mu, Vu, cover, stirrupDia, mainBarDia = 16) {
-  const d = effectiveDepth(h, cover, mainBarDia, stirrupDia);
+  const safeVal = (v, fallback = 0) => (v !== undefined && v !== null && isFinite(v) ? v : fallback);
+  b = safeVal(b, 300); h = safeVal(h, 500); length_m = safeVal(length_m, 6);
+  Mu = Math.abs(safeVal(Mu, 0)); Vu = Math.abs(safeVal(Vu, 0));
+  fc = safeVal(fc, 20); fy = safeVal(fy, 420);
+  cover = safeVal(cover, 30); stirrupDia = safeVal(stirrupDia, 10); mainBarDia = safeVal(mainBarDia, 16);
 
-  // Flexure
+  const d = Math.max(effectiveDepth(h, cover, mainBarDia, stirrupDia), 50);
+
   const flexure = beamAsFromMu(Mu, b, d, fc, fy);
-  if (flexure.error) return { error: flexure.error };
-
-  // Shear
   const shear = beamShearDesign(Vu, b, d, fc, fy, 2, stirrupDia);
 
-  // Bar selection for bottom (tension)
-  const bottomBars = selectRebar(flexure.As_req, [mainBarDia]);
-  // Top bars — typically minimum for simply supported
+  const As_req = safeVal(flexure?.As_req, AsMin(fc, fy, b, d));
+  const bottomBars = selectRebar(As_req, [mainBarDia]);
   const topBars = selectRebar(AsMin(fc, fy, b, d), [mainBarDia]);
 
-  // Rebar lengths
   const bottomSteel = bottomBars ? { dia: bottomBars.dia, n: bottomBars.n, length_m: length_m + 1 } : null;
   const topSteel = topBars ? { dia: topBars.dia, n: topBars.n, length_m: length_m + 1 } : null;
 
-  // Stirrups count
-  const stirrupPerM = shear.spacing > 0 ? Math.ceil(1000 / shear.spacing) : 2;
+  const stirrupSpacing = safeVal(shear?.spacing, 150);
+  const stirrupPerM = stirrupSpacing > 0 ? Math.ceil(1000 / stirrupSpacing) : 2;
   const stirrupCount = Math.ceil((length_m + 0.5) * stirrupPerM);
-  const stirrupLength = 2 * (b + h - 4 * cover) / 1000 + 0.15; // m per stirrup
+  const stirrupLength = Math.max(2 * (b + h - 4 * cover) / 1000 + 0.15, 0.5);
 
-  const bars = [
-    bottomSteel,
-    topSteel,
-    { dia: stirrupDia, n: stirrupCount, length_m: stirrupLength },
-  ].filter(Boolean);
-
+  const bars = [bottomSteel, topSteel, { dia: stirrupDia, n: stirrupCount, length_m: stirrupLength }].filter(Boolean);
   const totalWeight = totalSteelWeight(bars);
   const concreteVol = concreteVolume(length_m, b / 1000, h / 1000);
 
@@ -540,7 +546,7 @@ export function beamEstimate(b, h, length_m, fc, fy, Mu, Vu, cover, stirrupDia, 
     shear,
     bottomBars,
     topBars,
-    stirrups: { dia: stirrupDia, count: stirrupCount, spacing: shear.spacing },
+    stirrups: { dia: stirrupDia, count: stirrupCount, spacing: stirrupSpacing },
     steelWeight_kg: totalWeight,
     concreteVolume_m3: concreteVol,
     bars,
