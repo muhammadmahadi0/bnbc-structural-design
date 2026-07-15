@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useApp } from '../App';
+import { useApp, dimDisplay, spanDisplay, volDisplay, wDisplay } from '../App';
 import { selectRebar, barSpacing, rebarWeight, totalSteelWeight, concreteVolume } from '../utils/structuralMath';
 import { REBAR_SIZES } from '../utils/bnbcData';
 
 export default function RebarDetailing() {
-  const { materials } = useApp();
-  const { fy, cover } = materials;
+  const { materials, dimUnit } = useApp();
+  const { cover } = materials;
 
   const [elementType, setElementType] = useState('slab');
   const [AsRequired, setAsRequired] = useState(800);
@@ -43,6 +43,13 @@ export default function RebarDetailing() {
     return { ...bar, n, As_provided: n * bar.area, excess: n * bar.area - AsRequired };
   });
 
+  // Display helpers
+  const sw = dimDisplay(sectionWidth, dimUnit);
+  const sd = dimDisplay(sectionDepth, dimUnit);
+  const len = spanDisplay(elementLength_m, dimUnit);
+  const vol = volDisplay(concVol, dimUnit);
+  const wt = wDisplay(mainSteelWeight, dimUnit);
+
   return (
     <div className="space-y-6">
       <div>
@@ -51,7 +58,6 @@ export default function RebarDetailing() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Inputs */}
         <div className="card lg:col-span-1">
           <h3 className="card-header">⚙️ Detailing Parameters</h3>
           <div className="space-y-4">
@@ -70,13 +76,19 @@ export default function RebarDetailing() {
               <input type="number" step={25} min={50} max={10000} value={AsRequired} onChange={(e) => setAsRequired(Number(e.target.value))} />
             </div>
             {elementType !== 'slab' && (
-              <div className="input-group"><label>Width b (mm)</label><input type="number" step={25} min={150} value={sectionWidth} onChange={(e) => setSectionWidth(Number(e.target.value))} /></div>
+              <div className="input-group"><label>Width ({sw.unit})</label>
+                <input type="number" step={dimUnit === 'imperial' ? 1 : 25} min={dimUnit === 'imperial' ? 6 : 150}
+                  value={sw.val} onChange={(e) => setSectionWidth(dimUnit === 'imperial' ? Number(e.target.value) * 25.4 : Number(e.target.value))} />
+              </div>
             )}
-            <div className="input-group">
-              <label>{elementType === 'slab' ? 'Thickness h' : 'Depth h'} (mm)</label>
-              <input type="number" step={10} min={75} value={sectionDepth} onChange={(e) => setSectionDepth(Number(e.target.value))} />
+            <div className="input-group"><label>{elementType === 'slab' ? 'Thickness' : 'Depth'} ({sd.unit})</label>
+              <input type="number" step={dimUnit === 'imperial' ? 0.25 : 5} min={dimUnit === 'imperial' ? 3 : 75}
+                value={sd.val} onChange={(e) => setSectionDepth(dimUnit === 'imperial' ? Number(e.target.value) * 25.4 : Number(e.target.value))} />
             </div>
-            <div className="input-group"><label>Length (m)</label><input type="number" step={0.5} min={1} value={elementLength_m} onChange={(e) => setElementLength_m(Number(e.target.value))} /></div>
+            <div className="input-group"><label>Length ({len.unit})</label>
+              <input type="number" step={dimUnit === 'imperial' ? 0.5 : 0.5} min={dimUnit === 'imperial' ? 3 : 1}
+                value={len.val} onChange={(e) => setElementLength_m(dimUnit === 'imperial' ? Number(e.target.value) * 0.3048 : Number(e.target.value))} />
+            </div>
             <div className="input-group"><label>Stirrup/Tie Ø</label>
               <select value={stirrupDia} onChange={(e) => setStirrupDia(Number(e.target.value))}>
                 <option value={8}>Ø8</option><option value={10}>Ø10</option><option value={12}>Ø12</option>
@@ -96,7 +108,6 @@ export default function RebarDetailing() {
           </div>
         </div>
 
-        {/* Results */}
         <div className="card lg:col-span-2">
           <h3 className="card-header">📊 Detailing Results</h3>
 
@@ -104,11 +115,11 @@ export default function RebarDetailing() {
             <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800 mb-6">
               <h4 className="font-semibold text-sm text-emerald-800 dark:text-emerald-300 mb-2">✅ Optimal Bar Selection</h4>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">Bar</span><p className="font-bold text-lg">{selection.bar} <span className="text-sm font-normal">(Ø{selection.dia})</span></p></div>
+                <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">Bar</span><p className="font-bold text-lg">{selection.bar} <span className="text-sm font-normal">(Ø{selection.dia} / #{(selection.dia / 25.4 * 8).toFixed(0)})</span></p></div>
                 <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">No.</span><p className="font-bold text-lg">{selection.n}</p></div>
                 <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">A<sub>s,prov</sub></span><p className="font-bold text-lg">{selection.As_provided}<span className="text-sm font-normal"> mm²</span></p></div>
                 <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">Excess</span><p className="font-bold text-lg">{selection.excessPct}<span className="text-sm font-normal">%</span></p></div>
-                <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">Weight</span><p className="font-bold text-lg">{mainSteelWeight}<span className="text-sm font-normal"> kg</span></p></div>
+                <div><span className="text-emerald-600 dark:text-emerald-400 text-xs">Weight</span><p className="font-bold text-lg">{mainSteelWeight} kg ({(mainSteelWeight * 2.20462).toFixed(1)} lb)</p></div>
               </div>
             </div>
           ) : (
@@ -119,14 +130,13 @@ export default function RebarDetailing() {
 
           {spacing && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-              <div className="stat-box"><p className="result-label">Clear Spacing</p><p className="result-value">{spacing.clearSpacing.toFixed(0)}<span className="text-sm font-normal"> mm</span></p></div>
-              <div className="stat-box"><p className="result-label">Center-Center</p><p className="result-value">{spacing.centerSpacing.toFixed(0)}<span className="text-sm font-normal"> mm</span></p></div>
+              <div className="stat-box"><p className="result-label">Clear Spacing</p><p className="result-value">{spacing.clearSpacing.toFixed(0)} mm ({(spacing.clearSpacing / 25.4).toFixed(1)} in)</p></div>
+              <div className="stat-box"><p className="result-label">Center-Center</p><p className="result-value">{spacing.centerSpacing.toFixed(0)} mm ({(spacing.centerSpacing / 25.4).toFixed(1)} in)</p></div>
               <div className="stat-box"><p className="result-label">Bars/Layer</p><p className="result-value">{spacing.nPerLayer}</p></div>
               <div className="stat-box"><p className="result-label">Layers</p><p className="result-value">{spacing.layers}</p></div>
             </div>
           )}
 
-          {/* Rebar Schedule Table */}
           <div className="mb-6 overflow-x-auto">
             <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-3">📋 Rebar Schedule — All Options</h4>
             <table className="w-full text-sm">
@@ -142,7 +152,7 @@ export default function RebarDetailing() {
                 </tr>
               </thead>
               <tbody>
-                {schedule.map((row, i) => (
+                {schedule.map((row) => (
                   <tr key={row.dia}
                     className={`border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 ${selection?.dia === row.dia ? 'bg-emerald-50 dark:bg-emerald-900/20 font-medium' : ''}`}>
                     <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">{row.bar}</td>
@@ -158,13 +168,12 @@ export default function RebarDetailing() {
             </table>
           </div>
 
-          {/* Quantity Summary */}
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
             <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-3">📦 Material Quantity Summary</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div><span className="text-slate-500 dark:text-slate-400">Main bars</span><p className="font-bold font-mono text-lg">{mainSteelWeight} kg</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Main bars</span><p className="font-bold font-mono text-lg">{wt.val} {wt.unit}</p></div>
               <div><span className="text-slate-500 dark:text-slate-400">Steel density</span><p className="font-bold font-mono text-lg">{concVol > 0 ? (mainSteelWeight / concVol / 100).toFixed(1) : '—'} kg/m³</p></div>
-              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono text-lg">{concVol.toFixed(3)} m³</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono text-lg">{vol.val} {vol.unit}</p></div>
               <div><span className="text-slate-500 dark:text-slate-400">ρ ratio</span><p className="font-bold font-mono text-lg">
                 {sectionWidth > 0 && sectionDepth > 0 ? `${(AsRequired / (sectionWidth * sectionDepth) * 100).toFixed(2)}%` : '—'}
               </p></div>

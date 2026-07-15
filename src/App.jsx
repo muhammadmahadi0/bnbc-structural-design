@@ -8,13 +8,37 @@ import BeamDesign from './components/BeamDesign';
 import ColumnDesign from './components/ColumnDesign';
 import RebarDetailing from './components/RebarDetailing';
 
-// ── Unit Conversions ──────────────────────────────────
+// ── Stress Units (MPa ↔ psi/ksi) ─────────────────────
 export const mpaToPsi = (v) => Math.round(v * 145.038);
 export const mpaToKsi = (v) => (v / 6.89476).toFixed(1);
 export const psiToMpa = (v) => v / 145.038;
 export const ksiToMpa = (v) => v * 6.89476;
-export const fmtMpaPsi = (mpa) => `${mpa} MPa (${mpaToPsi(mpa)} psi)`;
-export const fmtMpaKsi = (mpa) => `${mpa} MPa (${mpaToKsi(mpa)} ksi)`;
+
+// ── Dimension Units (mm ↔ in, m ↔ ft) ────────────────
+export const mmToIn = (mm) => mm / 25.4;
+export const inToMm = (inch) => inch * 25.4;
+export const mToFt = (m) => m / 0.3048;
+export const ftToM = (ft) => ft * 0.3048;
+export const m3ToFt3 = (m3) => m3 * 35.315;
+export const kgToLb = (kg) => kg * 2.20462;
+
+// Display helpers — returns object { val, unit }
+export function dimDisplay(mm, dimUnit) {
+  if (dimUnit === 'imperial') return { val: +(mm / 25.4).toFixed(2), unit: 'in' };
+  return { val: mm, unit: 'mm' };
+}
+export function spanDisplay(m, dimUnit) {
+  if (dimUnit === 'imperial') return { val: +(m / 0.3048).toFixed(2), unit: 'ft' };
+  return { val: m, unit: 'm' };
+}
+export function volDisplay(m3, dimUnit) {
+  if (dimUnit === 'imperial') return { val: +(m3 * 35.315).toFixed(3), unit: 'ft³' };
+  return { val: +m3.toFixed(3), unit: 'm³' };
+}
+export function wDisplay(kg, dimUnit) {
+  if (dimUnit === 'imperial') return { val: +(kg * 2.20462).toFixed(1), unit: 'lb' };
+  return { val: +kg.toFixed(1), unit: 'kg' };
+}
 
 // ── Global App State ─────────────────────────────────
 export const AppContext = createContext();
@@ -29,30 +53,23 @@ export default function App() {
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('bnbc-dark-mode');
-    return saved === 'true';
+    return localStorage.getItem('bnbc-dark-mode') === 'true';
   });
-
   useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('bnbc-dark-mode', darkMode);
   }, [darkMode]);
-
-  // Close mobile sidebar on route change
   useEffect(() => { setMobileSidebar(false); }, [activeTab]);
 
-  // Unit system
-  const [unitSystem, setUnitSystem] = useState(() => {
-    return localStorage.getItem('bnbc-unit') || 'mpa';
-  });
-  useEffect(() => { localStorage.setItem('bnbc-unit', unitSystem); }, [unitSystem]);
+  // Stress unit (MPa / psi)
+  const [stressUnit, setStressUnit] = useState(() => localStorage.getItem('bnbc-stress') || 'mpa');
+  useEffect(() => { localStorage.setItem('bnbc-stress', stressUnit); }, [stressUnit]);
 
-  // Materials state (always stored in MPa internally)
+  // Dimension unit (metric / imperial)
+  const [dimUnit, setDimUnit] = useState(() => localStorage.getItem('bnbc-dim') || 'metric');
+  useEffect(() => { localStorage.setItem('bnbc-dim', dimUnit); }, [dimUnit]);
+
+  // Materials state (stored in MPa + mm internally)
   const [materials, setMaterials] = useState({
     fc: 27.6,
     fy: 420,
@@ -75,14 +92,16 @@ export default function App() {
   });
 
   const toggleDarkMode = useCallback(() => setDarkMode((p) => !p), []);
-  const toggleUnit = useCallback(() => setUnitSystem((p) => (p === 'mpa' ? 'psi' : 'mpa')), []);
+  const toggleStressUnit = useCallback(() => setStressUnit((p) => (p === 'mpa' ? 'psi' : 'mpa')), []);
+  const toggleDimUnit = useCallback(() => setDimUnit((p) => (p === 'metric' ? 'imperial' : 'metric')), []);
 
   const value = {
     activeTab, setActiveTab,
     materials, setMaterials,
     loads, setLoads,
     darkMode, toggleDarkMode,
-    unitSystem, setUnitSystem, toggleUnit,
+    stressUnit, setStressUnit, toggleStressUnit,
+    dimUnit, setDimUnit, toggleDimUnit,
     mobileSidebar, setMobileSidebar,
   };
 
@@ -102,30 +121,20 @@ export default function App() {
   return (
     <AppContext.Provider value={value}>
       <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
-        {/* Desktop sidebar */}
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+        <div className="hidden md:block"><Sidebar /></div>
 
-        {/* Mobile sidebar overlay */}
         {mobileSidebar && (
           <div className="fixed inset-0 z-40 md:hidden">
             <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSidebar(false)} />
-            <div className="absolute left-0 top-0 h-full w-72">
-              <Sidebar />
-            </div>
+            <div className="absolute left-0 top-0 h-full w-72"><Sidebar /></div>
           </div>
         )}
 
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
-            {/* Mobile top bar */}
             <div className="flex items-center gap-3 mb-4 md:hidden">
-              <button
-                onClick={() => setMobileSidebar(true)}
-                className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
-                aria-label="Open menu"
-              >
+              <button onClick={() => setMobileSidebar(true)}
+                className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" aria-label="Menu">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
@@ -136,13 +145,11 @@ export default function App() {
           </div>
         </main>
 
-        {/* Dark Mode Toggle — bottom-right corner */}
-        <button
-          onClick={toggleDarkMode}
+        {/* Dark mode toggle */}
+        <button onClick={toggleDarkMode}
           className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all duration-300 hover:scale-110
             bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-amber-300"
-          aria-label="Toggle dark mode"
-        >
+          aria-label="Toggle dark mode">
           {darkMode ? '☀️' : '🌙'}
         </button>
       </div>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useApp } from '../App';
+import { useApp, dimDisplay, spanDisplay, volDisplay } from '../App';
 import {
   columnAxialCapacity, columnReinfLimits, biaxialInteraction,
   selectRebar, totalSteelWeight, concreteVolume,
 } from '../utils/structuralMath';
 
 export default function ColumnDesign() {
-  const { materials } = useApp();
+  const { materials, dimUnit } = useApp();
   const { fc, fy, cover } = materials;
 
   const [b, setB] = useState(400);
@@ -37,6 +37,14 @@ export default function ColumnDesign() {
   const totalWeight = totalSteelWeight([...steelBars, ...tieBars]);
   const concVol = concreteVolume(columnHeight_m, b / 1000, h / 1000);
 
+  const bw = dimDisplay(b, dimUnit);
+  const bh = dimDisplay(h, dimUnit);
+  const bHt = spanDisplay(columnHeight_m, dimUnit);
+  const vol = volDisplay(concVol, dimUnit);
+  const wDisp = { val: +(totalWeight * 2.20462).toFixed(1), unit: 'lb' };
+  const wMetric = { val: totalWeight, unit: 'kg' };
+  const w = dimUnit === 'imperial' ? wDisp : wMetric;
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,31 +53,38 @@ export default function ColumnDesign() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Input */}
         <div className="card lg:col-span-1">
           <h3 className="card-header">⚙️ Column Parameters</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="input-group"><label>b (mm)</label><input type="number" step={25} min={200} max={800} value={b} onChange={(e) => setB(Number(e.target.value))} /></div>
-              <div className="input-group"><label>h (mm)</label><input type="number" step={25} min={200} max={800} value={h} onChange={(e) => setH(Number(e.target.value))} /></div>
+              <div className="input-group"><label>b ({bw.unit})</label>
+                <input type="number" step={dimUnit === 'imperial' ? 1 : 25} min={dimUnit === 'imperial' ? 8 : 200} max={dimUnit === 'imperial' ? 32 : 800}
+                  value={bw.val} onChange={(e) => setB(dimUnit === 'imperial' ? Number(e.target.value) * 25.4 : Number(e.target.value))} />
+              </div>
+              <div className="input-group"><label>h ({bh.unit})</label>
+                <input type="number" step={dimUnit === 'imperial' ? 1 : 25} min={dimUnit === 'imperial' ? 8 : 200} max={dimUnit === 'imperial' ? 32 : 800}
+                  value={bh.val} onChange={(e) => setH(dimUnit === 'imperial' ? Number(e.target.value) * 25.4 : Number(e.target.value))} />
+              </div>
             </div>
             <div className="input-group">
-              <label className="text-xs text-slate-500 dark:text-slate-400">A<sub>g</sub> = {Ag.toLocaleString()} mm² ({b}×{h})</label>
+              <label className="text-xs text-slate-500 dark:text-slate-400">A<sub>g</sub> = {Ag.toLocaleString()} mm² ({(Ag / 25.4 / 25.4).toFixed(1)} in²) — {bw.val}×{bh.val} {bw.unit}</label>
             </div>
-            <div className="input-group"><label>Height (m)</label><input type="number" step={0.5} min={2} max={10} value={columnHeight_m} onChange={(e) => setColumnHeight_m(Number(e.target.value))} /></div>
+            <div className="input-group"><label>Height ({bHt.unit})</label>
+              <input type="number" step={dimUnit === 'imperial' ? 0.5 : 0.5} min={dimUnit === 'imperial' ? 6 : 2} max={dimUnit === 'imperial' ? 33 : 10}
+                value={bHt.val} onChange={(e) => setColumnHeight_m(dimUnit === 'imperial' ? Number(e.target.value) * 0.3048 : Number(e.target.value))} />
+            </div>
             <div className="input-group"><label>Type</label>
               <select value={type} onChange={(e) => setType(e.target.value)}>
                 <option value="tied">Tied Column</option><option value="spiral">Spiral Column</option>
               </select>
             </div>
-            <div className="input-group">
-              <label>ρ<sub>g</sub> (%)</label>
+            <div className="input-group"><label>ρ<sub>g</sub> (%)</label>
               <input type="number" step={0.25} min={limits.rho_min} max={limits.rho_max} value={astRatio} onChange={(e) => setAstRatio(Number(e.target.value))} />
               <p className="text-[10px] text-slate-400">Min: {limits.rho_min}% · Max: {limits.rho_max}%</p>
             </div>
             <div className="input-group"><label>Main Bar Ø</label>
               <select value={mainBarDia} onChange={(e) => setMainBarDia(Number(e.target.value))}>
-                {[12, 16, 20, 25, 28, 32].map((d) => (<option key={d} value={d}>Ø{d}</option>))}
+                {[12, 16, 20, 25, 28, 32].map((d) => (<option key={d} value={d}>Ø{d} (#{(d / 25.4 * 8).toFixed(0)})</option>))}
               </select>
             </div>
             <div className="input-group"><label>M<sub>ux</sub> (kN·m)</label><input type="number" step={5} value={Mux} onChange={(e) => setMux(Number(e.target.value))} /></div>
@@ -77,12 +92,11 @@ export default function ColumnDesign() {
           </div>
         </div>
 
-        {/* Results */}
         <div className="card lg:col-span-2">
           <h3 className="card-header">📊 Design Results</h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="stat-box"><p className="result-label">Nominal P<sub>n</sub></p><p className="result-value">{capacity.Pn.toFixed(0)}<span className="text-sm font-normal"> kN</span></p></div>
+            <div className="stat-box"><p className="result-label">Nominal P<sub>n</sub></p><p className="result-value">{capacity.Pn.toFixed(0)}<span className="text-sm font-normal"> kN ({(capacity.Pn / 4.448).toFixed(0)} kip)</span></p></div>
             <div className="stat-box"><p className="result-label">φP<sub>n</sub> (design)</p><p className="result-value text-blue-700 dark:text-blue-400">{capacity.phiPn.toFixed(0)}<span className="text-sm font-normal"> kN</span></p></div>
             <div className="stat-box"><p className="result-label">φ / Reduction</p><p className="result-value">{capacity.phi} / {capacity.reduction}</p></div>
             <div className="stat-box"><p className="result-label">ρ<sub>g</sub></p><p className="result-value">{capacity.rho_g}<span className="text-sm font-normal"> %</span></p></div>
@@ -91,7 +105,7 @@ export default function ColumnDesign() {
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
               <p className="text-xs text-green-700 dark:text-green-400">A<sub>s,min</sub> (1%)</p>
-              <p className="text-lg font-bold text-green-800 dark:text-green-300">{limits.As_min.toFixed(0)} mm²</p>
+              <p className="text-lg font-bold text-green-800 dark:text-green-300">{limits.As_min.toFixed(0)} mm² ({(limits.As_min / 645.16).toFixed(2)} in²)</p>
             </div>
             <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
               <p className="text-xs text-amber-700 dark:text-amber-400">A<sub>s,max</sub> ({limits.rho_max}%)</p>
@@ -107,7 +121,7 @@ export default function ColumnDesign() {
             <div className="mb-6">
               <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-3">🔄 Reinforcement Layout</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="stat-box"><p className="result-label">Bar</p><p className="result-value">{barSelection.n} — Ø{barSelection.dia}</p><p className="text-xs text-slate-400">{barSelection.bar}</p></div>
+                <div className="stat-box"><p className="result-label">Bar</p><p className="result-value">{barSelection.n} — Ø{barSelection.dia} (#{(barSelection.dia / 25.4 * 8).toFixed(0)})</p><p className="text-xs text-slate-400">{barSelection.bar}</p></div>
                 <div className="stat-box"><p className="result-label">A<sub>s,prov</sub></p><p className="result-value">{barSelection.As_provided.toFixed(0)}<span className="text-sm font-normal"> mm²</span></p></div>
                 <div className="stat-box"><p className="result-label">Excess</p><p className="result-value">{barSelection.excessPct}<span className="text-sm font-normal"> %</span></p></div>
                 <div className="stat-box"><p className="result-label">Bars/face</p><p className="result-value">{barsPerFace}</p></div>
@@ -116,10 +130,10 @@ export default function ColumnDesign() {
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="stat-box"><p className="result-label">Tie Ø</p><p className="result-value">Ø{tieDia}</p></div>
-            <div className="stat-box"><p className="result-label">Spacing</p><p className="result-value">{tieSpacing}<span className="text-sm font-normal"> mm</span></p></div>
+            <div className="stat-box"><p className="result-label">Tie Ø</p><p className="result-value">Ø{tieDia} ({(tieDia / 25.4).toFixed(2)}")</p></div>
+            <div className="stat-box"><p className="result-label">Spacing</p><p className="result-value">{tieSpacing} mm ({(tieSpacing / 25.4).toFixed(1)} in)</p></div>
             <div className="stat-box"><p className="result-label">Count</p><p className="result-value">{tieCount}</p></div>
-            <div className="stat-box"><p className="result-label">16Ø={16 * mainBarDia} · 48Ø<sub>tie</sub>={48 * tieDia}</p></div>
+            <div className="stat-box"><p className="result-label">Limits</p><p className="result-value text-[10px]">16Ø={(16 * mainBarDia)} · 48Ø<sub>tie</sub>={(48 * tieDia)} · {b}={b}</p></div>
           </div>
 
           <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800 mb-6">
@@ -138,9 +152,9 @@ export default function ColumnDesign() {
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
             <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-2">📦 Quantity Estimate</h4>
             <div className="grid grid-cols-3 gap-3 text-sm">
-              <div><span className="text-slate-500 dark:text-slate-400">Steel weight</span><p className="font-bold font-mono">{totalWeight} kg</p></div>
-              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono">{concVol} m³</p></div>
-              <div><span className="text-slate-500 dark:text-slate-400">Steel density</span><p className="font-bold font-mono">{concVol > 0 ? (totalWeight / concVol / 100).toFixed(1) : 0} kg/m³</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Steel</span><p className="font-bold font-mono">{w.val} {w.unit}</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">Concrete</span><p className="font-bold font-mono">{vol.val} {vol.unit}</p></div>
+              <div><span className="text-slate-500 dark:text-slate-400">ρ</span><p className="font-bold font-mono">{concVol > 0 ? (totalWeight / concVol / 100).toFixed(1) : 0} kg/m³</p></div>
             </div>
           </div>
         </div>
