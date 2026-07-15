@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -29,10 +30,6 @@ export default {
           800: '#166534',
           900: '#14532d',
         },
-        warning: '#f59e0b',
-        danger: '#ef4444',
-        steel: '#64748b',
-        concrete: '#a8a29e',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

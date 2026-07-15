@@ -1,27 +1,49 @@
 import React from 'react';
-import { useApp } from '../App';
+import { useApp, mpaToPsi, mpaToKsi } from '../App';
 import { CONCRETE_GRADES, STEEL_GRADES, COVER_OPTIONS } from '../utils/bnbcData';
 import { Ec, beta1 } from '../utils/structuralMath';
 
 export default function MaterialSelector() {
-  const { materials, setMaterials } = useApp();
+  const { materials, setMaterials, unitSystem, toggleUnit } = useApp();
   const { fc, fy, cover } = materials;
 
   const handleChange = (field, value) => {
     setMaterials((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Compute derived properties live
   const ec = Ec(fc);
   const b1 = beta1(fc);
-  const ec_48 = 4700 * Math.sqrt(27.6);
-  const fy_si = fy;
+  const fr = 0.62 * Math.sqrt(fc);
+
+  const fcDisplay = unitSystem === 'psi' ? mpaToPsi(fc) : fc;
+  const fyDisplay = unitSystem === 'psi' ? mpaToPsi(fy) : fy;
+  const fcUnit = unitSystem === 'psi' ? 'psi' : 'MPa';
+  const fyUnit = unitSystem === 'psi' ? 'psi' : 'MPa';
+
+  // Build concrete options with dual-unit labels
+  const concreteOptions = CONCRETE_GRADES.map((g) => ({
+    ...g,
+    label: `${g.label} (${mpaToPsi(g.fc)} psi)`,
+  }));
+
+  const steelOptions = STEEL_GRADES.map((g) => ({
+    ...g,
+    label: `${g.label} (${mpaToPsi(g.fy)} psi / ${mpaToKsi(g.fy)} ksi)`,
+  }));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">🧱 Material Selection</h2>
-        <p className="text-slate-500 mt-1">BNBC 2020 / ACI 318-19 material properties</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🧱 Material Selection</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">BNBC 2020 / ACI 318-19 material properties</p>
+        </div>
+        <button
+          onClick={toggleUnit}
+          className="px-4 py-2 rounded-lg text-sm font-medium transition bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 self-start"
+        >
+          Display: <strong>{unitSystem === 'mpa' ? 'MPa' : 'psi / ksi'}</strong> ↻
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -39,42 +61,51 @@ export default function MaterialSelector() {
                   handleChange('concreteLabel', grade?.label || '');
                 }}
               >
-                {CONCRETE_GRADES.map((g) => (
+                {concreteOptions.map((g) => (
                   <option key={g.fc} value={g.fc}>{g.label}</option>
                 ))}
               </select>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                Current: <strong>{fc} MPa</strong> = <strong>{mpaToPsi(fc)} psi</strong> = <strong>{mpaToKsi(fc)} ksi</strong>
+              </p>
             </div>
 
             <div className="input-group">
-              <label>Custom f'c (MPa)</label>
+              <label>Custom f'c ({fcUnit})</label>
               <input
                 type="number"
-                min={10}
-                max={60}
-                step={0.5}
-                value={fc}
-                onChange={(e) => handleChange('fc', Number(e.target.value))}
+                min={unitSystem === 'psi' ? 2000 : 10}
+                max={unitSystem === 'psi' ? 9000 : 60}
+                step={unitSystem === 'psi' ? 100 : 0.5}
+                value={fcDisplay}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  handleChange('fc', unitSystem === 'psi' ? v / 145.038 : v);
+                }}
               />
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-              <h4 className="text-sm font-semibold text-slate-700">Derived Properties</h4>
+            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Derived Properties</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-slate-500">Modulus E<sub>c</sub></span>
-                  <p className="font-mono font-bold">{ec.toFixed(0)} MPa</p>
+                  <span className="text-slate-500 dark:text-slate-400">Modulus E<sub>c</sub></span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">{ec.toFixed(0)} MPa</p>
+                  <p className="text-[10px] text-slate-400">{(ec / 1000).toFixed(1)} GPa</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">β<sub>1</sub></span>
-                  <p className="font-mono font-bold">{b1.toFixed(3)}</p>
+                  <span className="text-slate-500 dark:text-slate-400">β<sub>1</sub></span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">{b1.toFixed(3)}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">√f'c</span>
-                  <p className="font-mono font-bold">{Math.sqrt(fc).toFixed(2)}</p>
+                  <span className="text-slate-500 dark:text-slate-400">√f'c</span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">{Math.sqrt(fc).toFixed(2)}</p>
+                  <p className="text-[10px] text-slate-400">{(Math.sqrt(fc * 145.038)).toFixed(0)} √psi</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Modulus of rupture f<sub>r</sub></span>
-                  <p className="font-mono font-bold">{(0.62 * Math.sqrt(fc)).toFixed(2)} MPa</p>
+                  <span className="text-slate-500 dark:text-slate-400">Modulus of rupture f<sub>r</sub></span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">{fr.toFixed(2)} MPa</p>
+                  <p className="text-[10px] text-slate-400">{(fr * 145.038).toFixed(1)} psi</p>
                 </div>
               </div>
             </div>
@@ -95,21 +126,27 @@ export default function MaterialSelector() {
                   handleChange('steelLabel', grade?.label || '');
                 }}
               >
-                {STEEL_GRADES.map((g) => (
+                {steelOptions.map((g) => (
                   <option key={g.fy} value={g.fy}>{g.label}</option>
                 ))}
               </select>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                Current: <strong>{fy} MPa</strong> = <strong>{mpaToPsi(fy)} psi</strong> = <strong>{mpaToKsi(fy)} ksi</strong>
+              </p>
             </div>
 
             <div className="input-group">
-              <label>Custom f<sub>y</sub> (MPa)</label>
+              <label>Custom f<sub>y</sub> ({fyUnit})</label>
               <input
                 type="number"
-                min={200}
-                max={700}
-                step={10}
-                value={fy}
-                onChange={(e) => handleChange('fy', Number(e.target.value))}
+                min={unitSystem === 'psi' ? 40000 : 200}
+                max={unitSystem === 'psi' ? 100000 : 700}
+                step={unitSystem === 'psi' ? 1000 : 10}
+                value={fyDisplay}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  handleChange('fy', unitSystem === 'psi' ? v / 145.038 : v);
+                }}
               />
             </div>
 
@@ -129,24 +166,26 @@ export default function MaterialSelector() {
               </select>
             </div>
 
-            <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-              <h4 className="text-sm font-semibold text-slate-700">Steel Properties</h4>
+            <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 space-y-2">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Steel Properties</h4>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-slate-500">E<sub>s</sub></span>
-                  <p className="font-mono font-bold">200,000 MPa</p>
+                  <span className="text-slate-500 dark:text-slate-400">E<sub>s</sub></span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">200,000 MPa</p>
+                  <p className="text-[10px] text-slate-400">29,000 ksi</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">ε<sub>y</sub> (fy/Es)</span>
-                  <p className="font-mono font-bold">{(fy_si / 200000).toFixed(4)}</p>
+                  <span className="text-slate-500 dark:text-slate-400">ε<sub>y</sub> (fy/Es)</span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">{(fy / 200000).toFixed(4)}</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Density</span>
-                  <p className="font-mono font-bold">78.5 kN/m³</p>
+                  <span className="text-slate-500 dark:text-slate-400">Density</span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">78.5 kN/m³</p>
+                  <p className="text-[10px] text-slate-400">490 lb/ft³</p>
                 </div>
                 <div>
-                  <span className="text-slate-500">Unit mass</span>
-                  <p className="font-mono font-bold">7,850 kg/m³</p>
+                  <span className="text-slate-500 dark:text-slate-400">Mass</span>
+                  <p className="font-mono font-bold text-slate-800 dark:text-slate-200">7,850 kg/m³</p>
                 </div>
               </div>
             </div>
@@ -155,23 +194,26 @@ export default function MaterialSelector() {
       </div>
 
       {/* Material Summary Card */}
-      <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <div className="card bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
         <h3 className="card-header">📋 Material Summary</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           <div className="stat-box">
             <p className="result-label">Concrete</p>
-            <p className="text-lg font-bold text-slate-800">f'c = {fc} MPa</p>
-            <p className="text-xs text-slate-500">E<sub>c</sub> = {ec.toFixed(0)} MPa · β₁ = {b1.toFixed(3)}</p>
+            <p className="text-lg font-bold text-slate-800 dark:text-slate-100">f'c = {fc} MPa</p>
+            <p className="text-xs text-slate-400">= {mpaToPsi(fc)} psi / {mpaToKsi(fc)} ksi</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">E<sub>c</sub> = {ec.toFixed(0)} MPa · β₁ = {b1.toFixed(3)}</p>
           </div>
           <div className="stat-box">
             <p className="result-label">Steel</p>
-            <p className="text-lg font-bold text-slate-800">fy = {fy} MPa</p>
-            <p className="text-xs text-slate-500">Es = 200 GPa · ε<sub>y</sub> = {(fy / 200000).toFixed(4)}</p>
+            <p className="text-lg font-bold text-slate-800 dark:text-slate-100">fy = {fy} MPa</p>
+            <p className="text-xs text-slate-400">= {mpaToPsi(fy)} psi / {mpaToKsi(fy)} ksi</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Es = 200 GPa · ε<sub>y</sub> = {(fy / 200000).toFixed(4)}</p>
           </div>
           <div className="stat-box">
             <p className="result-label">Cover</p>
-            <p className="text-lg font-bold text-slate-800">{cover} mm</p>
-            <p className="text-xs text-slate-500">Per BNBC 2020 Table 6.2.6</p>
+            <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{cover} mm</p>
+            <p className="text-xs text-slate-400">= {(cover / 25.4).toFixed(2)} in</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Per BNBC 2020 Table 6.2.6</p>
           </div>
         </div>
       </div>

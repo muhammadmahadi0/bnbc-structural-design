@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import MaterialSelector from './components/MaterialSelector';
@@ -7,6 +7,14 @@ import SlabDesign from './components/SlabDesign';
 import BeamDesign from './components/BeamDesign';
 import ColumnDesign from './components/ColumnDesign';
 import RebarDetailing from './components/RebarDetailing';
+
+// ── Unit Conversions ──────────────────────────────────
+export const mpaToPsi = (v) => Math.round(v * 145.038);
+export const mpaToKsi = (v) => (v / 6.89476).toFixed(1);
+export const psiToMpa = (v) => v / 145.038;
+export const ksiToMpa = (v) => v * 6.89476;
+export const fmtMpaPsi = (mpa) => `${mpa} MPa (${mpaToPsi(mpa)} psi)`;
+export const fmtMpaKsi = (mpa) => `${mpa} MPa (${mpaToKsi(mpa)} ksi)`;
 
 // ── Global App State ─────────────────────────────────
 export const AppContext = createContext();
@@ -17,12 +25,40 @@ export function useApp() {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileSidebar, setMobileSidebar] = useState(false);
+
+  // Dark mode
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('bnbc-dark-mode');
+    return saved === 'true';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('bnbc-dark-mode', darkMode);
+  }, [darkMode]);
+
+  // Close mobile sidebar on route change
+  useEffect(() => { setMobileSidebar(false); }, [activeTab]);
+
+  // Unit system
+  const [unitSystem, setUnitSystem] = useState(() => {
+    return localStorage.getItem('bnbc-unit') || 'mpa';
+  });
+  useEffect(() => { localStorage.setItem('bnbc-unit', unitSystem); }, [unitSystem]);
+
+  // Materials state (always stored in MPa internally)
   const [materials, setMaterials] = useState({
-    fc: 27.6,        // C28 — 4000 psi
-    fy: 420,          // GR-420
-    cover: 30,        // mm
-    concreteLabel: 'C-28 / 4000 psi',
-    steelLabel: 'GR-420 (420 MPa) — 60ksi',
+    fc: 27.6,
+    fy: 420,
+    cover: 30,
+    concreteLabel: 'C-28 / 4000 psi (27.6 MPa)',
+    steelLabel: 'GR-420 / 60 ksi (420 MPa)',
     coverLabel: 'Beam — 30 mm (interior)',
   });
 
@@ -38,7 +74,17 @@ export default function App() {
     floorCount: 5,
   });
 
-  const value = { activeTab, setActiveTab, materials, setMaterials, loads, setLoads };
+  const toggleDarkMode = useCallback(() => setDarkMode((p) => !p), []);
+  const toggleUnit = useCallback(() => setUnitSystem((p) => (p === 'mpa' ? 'psi' : 'mpa')), []);
+
+  const value = {
+    activeTab, setActiveTab,
+    materials, setMaterials,
+    loads, setLoads,
+    darkMode, toggleDarkMode,
+    unitSystem, setUnitSystem, toggleUnit,
+    mobileSidebar, setMobileSidebar,
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -55,13 +101,50 @@ export default function App() {
 
   return (
     <AppContext.Provider value={value}>
-      <div className="flex h-screen overflow-hidden bg-slate-50">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
+        {/* Desktop sidebar */}
+        <div className="hidden md:block">
+          <Sidebar />
+        </div>
+
+        {/* Mobile sidebar overlay */}
+        {mobileSidebar && (
+          <div className="fixed inset-0 z-40 md:hidden">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSidebar(false)} />
+            <div className="absolute left-0 top-0 h-full w-72">
+              <Sidebar />
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
+            {/* Mobile top bar */}
+            <div className="flex items-center gap-3 mb-4 md:hidden">
+              <button
+                onClick={() => setMobileSidebar(true)}
+                className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
+                aria-label="Open menu"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <span className="font-bold text-sm text-slate-700 dark:text-slate-200">🏗️ BNBC 2020</span>
+            </div>
             {renderContent()}
           </div>
         </main>
+
+        {/* Dark Mode Toggle — bottom-right corner */}
+        <button
+          onClick={toggleDarkMode}
+          className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all duration-300 hover:scale-110
+            bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-amber-300"
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </div>
     </AppContext.Provider>
   );
