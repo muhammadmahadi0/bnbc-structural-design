@@ -67,10 +67,11 @@ building-structural-design/
 - **LRFD Combos:** 1.4D+1.6L, 1.2D+1.6L+0.5W, 1.2D+1.0W+1.0L, 0.9D+1.0W, 1.2D+1.0E+0.75L, 0.9D+1.0E
 
 ### Module 3: 🏛️ Slab Design
-- Min thickness per ACI 7.3.1.1: l/20 SS, l/24 1-cont, l/28 2-cont, l/10 cant
-- fy modification: h_adj = h_base × (0.4 + f_y/700)
-- One-way moment coefficients (1/8, 1/10, 1/14, 1/2)
-- ✅ **Two-way slab (ACI 13.6):** Direct Design Method → column strip & middle strip moments (X/Y), Mo_x/Mo_y, column strip widths, auto-detects one-way when Ly/Lx > 2
+- **Hybrid approach:** Basic h_min reference (L/20–L/28 + fy adj) for quick estimates
+- Detailed BNBC exact thickness → links to dedicated **[slabthickness.netlify.app](https://slabthickness.netlify.app/)** (9 edge conditions, iterative self-weight, ACI moment coefficients)
+- Manual h input with "Min" reset button
+- One-way: auto moment coefficients (1/8, 1/10, 1/14, 1/2)
+- Two-way: manual Mu entry (values from slabthickness), or use auto simple one-way calc
 - Iterative tension-controlled As (max 50 iterations, NaN-safe)
 - Temperature/shrinkage steel per ACI 24.4
 - Rebar selection + spacing in mm & inches

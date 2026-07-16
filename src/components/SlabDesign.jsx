@@ -14,6 +14,8 @@ export default function SlabDesign() {
   const [supportType, setSupportType] = useState('Simply supported');
   const [barDia, setBarDia] = useState(12);
   const [isOneWay, setIsOneWay] = useState(true);
+  const [manualMu, setManualMu] = useState('');
+  const [useManualMu, setUseManualMu] = useState(false);
 
   const L = span_m * 1000;
   const factor = SLAB_THICKNESS_FACTORS[supportType] || 20;
@@ -26,9 +28,14 @@ export default function SlabDesign() {
 
   const d = effectiveDepth(h, cover, barDia, 0);
   const w_u = slabFactoredLoad(loads.dl, loads.sdl, loads.ll);
-  const moments = slabBendingMoment(supportType, w_u, span_m);
-  const Mu_design = Math.max(Math.abs(moments?.positive_mid || 0), Math.abs(moments?.negative_support || 0));
-  const steelResult = slabRequiredSteel(Mu_design, 1000, d, fc, fy);
+  const autoMoments = slabBendingMoment(supportType, w_u, span_m);
+  
+  // For one-way: use auto moments; for two-way: optional manual entry
+  const Mu = useManualMu && !isOneWay
+    ? Number(manualMu)
+    : Math.max(Math.abs(autoMoments?.positive_mid || 0), Math.abs(autoMoments?.negative_support || 0));
+  
+  const steelResult = slabRequiredSteel(Mu, 1000, d, fc, fy);
   const barSelection = selectRebar(steelResult.As_req, [10, 12, 16]);
   const spacingResult = barSelection ? barSpacing(1000, cover, 0, barSelection.dia, barSelection.n, 1) : null;
   const As_temp = getTempShrinkageAs(fy, h);
@@ -42,8 +49,20 @@ export default function SlabDesign() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🏛️ Slab Design</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">One-way slab design per BNBC 2020 / ACI 318-19</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">{isOneWay ? 'One-way' : 'Two-way'} slab per BNBC 2020 / ACI 318-19</p>
       </div>
+
+      {/* 🔗 BNBC Exact Thickness Banner */}
+      <a href="https://slabthickness.netlify.app/" target="_blank" rel="noopener noreferrer"
+        className="block p-4 rounded-lg border-2 border-dashed border-blue-400 dark:border-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 hover:from-blue-100 dark:hover:from-blue-800/30 transition group">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">📐 BNBC Exact Slab Thickness</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Get precise h with 9 edge conditions, iterative self-weight, and ACI moment coefficients</p>
+          </div>
+          <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition text-lg">↗</span>
+        </div>
+      </a>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="card lg:col-span-1">
@@ -54,7 +73,7 @@ export default function SlabDesign() {
               <div className="flex gap-2">
                 {['One-Way', 'Two-Way'].map((t) => (
                   <button key={t} className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${(isOneWay && t === 'One-Way') || (!isOneWay && t === 'Two-Way') ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
-                    onClick={() => setIsOneWay(t === 'One-Way')}>{t}</button>
+                    onClick={() => { setIsOneWay(t === 'One-Way'); setUseManualMu(false); }}>{t}</button>
                 ))}
               </div>
             </div>
@@ -83,6 +102,23 @@ export default function SlabDesign() {
                 <option value={16}>Ø16 — #5 (0.625")</option>
               </select>
             </div>
+
+            {/* Manual Mu entry for two-way */}
+            {!isOneWay && (
+              <div className="input-group">
+                <label>M<sub>u</sub> (kN·m/m) <button className="text-xs text-blue-500 hover:text-blue-700" onClick={() => setUseManualMu(!useManualMu)}>{useManualMu ? '☰ Auto' : '✏️ Manual'}</button></label>
+                {useManualMu ? (
+                  <input type="number" step={0.1} min={0} value={manualMu}
+                    onChange={(e) => setManualMu(e.target.value)}
+                    placeholder="Enter Mu from slabthickness" />
+                ) : (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
+                    Use <a href="https://slabthickness.netlify.app/" target="_blank" className="text-blue-600 underline">slabthickness ↗</a> for moments, then toggle ✏️ Manual to enter Mu
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between"><span>SDL</span><span>{loads.sdl} kN/m²</span></div>
               <div className="flex justify-between"><span>LL</span><span>{loads.ll} kN/m²</span></div>
@@ -97,52 +133,33 @@ export default function SlabDesign() {
             <div className="stat-box"><p className="result-label">Min Thickness</p><p className="result-value">{hMinDisp.val} <span className="text-sm font-normal">{hMinDisp.unit}</span></p><p className="text-xs text-slate-400">h/l = 1/{factor}</p></div>
             <div className="stat-box"><p className="result-label">Eff. depth d</p><p className="result-value">{dDisp.val} <span className="text-sm font-normal">{dDisp.unit}</span></p></div>
             <div className="stat-box"><p className="result-label">Span / Depth</p><p className="result-value">{(L / h).toFixed(1)}</p><p className="text-xs text-slate-400">Limit ~ 20-28</p></div>
-            <div className="stat-box"><p className="result-label">Design M<sub>u</sub></p><p className="result-value">{Mu_design.toFixed(2)}<span className="text-sm font-normal"> kN·m</span></p></div>
+            <div className="stat-box"><p className="result-label">Design M<sub>u</sub></p><p className="result-value">{Mu.toFixed(2)}<span className="text-sm font-normal"> kN·m</span></p></div>
           </div>
 
-          {moments && isOneWay && (
+          {autoMoments && isOneWay && (
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
                 <p className="text-xs text-green-700 dark:text-green-400 uppercase font-semibold">Pos. M<sub>mid</sub></p>
-                <p className="text-lg font-bold text-green-800 dark:text-green-300">{moments.positive_mid.toFixed(2)} kN·m</p>
+                <p className="text-lg font-bold text-green-800 dark:text-green-300">{autoMoments.positive_mid.toFixed(2)} kN·m</p>
               </div>
               <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
                 <p className="text-xs text-red-700 dark:text-red-400 uppercase font-semibold">Neg. M<sub>support</sub></p>
-                <p className="text-lg font-bold text-red-800 dark:text-red-300">{Math.abs(moments.negative_support).toFixed(2)} kN·m</p>
+                <p className="text-lg font-bold text-red-800 dark:text-red-300">{Math.abs(autoMoments.negative_support).toFixed(2)} kN·m</p>
               </div>
             </div>
           )}
 
-          {moments && !isOneWay && moments.type === 'two-way' && (
-            <div className="mb-6 space-y-3">
-              <p className="text-xs text-slate-500">Ly/Lx = {moments.ratio} Mo_x = {moments.Mo_x} Mo_y = {moments.Mo_y} kN·m</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs font-semibold text-blue-700 mb-1">X-direction — col strip {moments.colStripWidth_x}m</p>
-                  <div className="grid grid-cols-2 gap-1 text-xs">
-                    <div>-M col: <strong>{moments.negative.column_strip_x}</strong></div>
-                    <div>-M mid: {moments.negative.middle_strip_x}</div>
-                    <div>+M col: <strong>{moments.positive.column_strip_x}</strong></div>
-                    <div>+M mid: {moments.positive.middle_strip_x}</div>
-                  </div>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-                  <p className="text-xs font-semibold text-purple-700 mb-1">Y-direction — col strip {moments.colStripWidth_y}m</p>
-                  <div className="grid grid-cols-2 gap-1 text-xs">
-                    <div>-M col: <strong>{moments.negative.column_strip_y}</strong></div>
-                    <div>-M mid: {moments.negative.middle_strip_y}</div>
-                    <div>+M col: <strong>{moments.positive.column_strip_y}</strong></div>
-                    <div>+M mid: {moments.positive.middle_strip_y}</div>
-                  </div>
+          {!isOneWay && !useManualMu && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-4 mb-6 border border-indigo-200 dark:border-indigo-800">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📐</span>
+                <div>
+                  <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Two-way moment coefficients + 9 edge condition cases</p>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">
+                    Get exact M<sub>u</sub> values from <a href="https://slabthickness.netlify.app/" target="_blank" className="font-semibold underline">slabthickness.netlify.app ↗</a>, then toggle <strong>✏️ Manual</strong> in Parameters to enter them here.
+                  </p>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400">Design for max moment: {Mu_design} kN·m (column strip negative)</p>
-            </div>
-          )}
-
-          {moments && !isOneWay && moments.type === 'one-way' && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mb-4">
-              <p className="text-sm font-semibold text-amber-700">⚠️ {moments.warning}</p>
             </div>
           )}
 
