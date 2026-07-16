@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useApp, dimDisplay, spanDisplay } from '../App';
+import { useApp, dimDisplay } from '../App';
+import { t } from '../utils/translations';
 import {
   slabFactoredLoad, slabBendingMoment, slabRequiredSteel,
   selectRebar, barSpacing, effectiveDepth, getTempShrinkageAs,
@@ -7,7 +8,7 @@ import {
 import { SLAB_THICKNESS_FACTORS, MOMENT_COEFFICIENTS } from '../utils/bnbcData';
 
 export default function SlabDesign() {
-  const { materials, loads, dimUnit } = useApp();
+  const { darkMode, lang, stressUnit, dimUnit, materials, loads } = useApp();
   const { fc, fy, cover } = materials;
 
   const [span_m, setSpan_m] = useState(4.0);
@@ -48,7 +49,7 @@ export default function SlabDesign() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🏛️ Slab Design</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('slab.title', lang)}</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">{isOneWay ? 'One-way' : 'Two-way'} slab per BNBC 2020 / ACI 318-19</p>
       </div>
 
@@ -57,7 +58,7 @@ export default function SlabDesign() {
         className="block p-4 rounded-lg border-2 border-dashed border-blue-400 dark:border-blue-600 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 hover:from-blue-100 dark:hover:from-blue-800/30 transition group">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">📐 BNBC Exact Slab Thickness</p>
+            <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">{t('slab.bnbcLink', lang)}</p>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Get precise h with 9 edge conditions, iterative self-weight, and ACI moment coefficients</p>
           </div>
           <span className="text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition text-lg">↗</span>

@@ -4,7 +4,7 @@ import { Ec, beta1, rhoBal, rhoMin, rhoMax } from '../utils/structuralMath';
 import { SEISMIC_REGIONS } from '../utils/bnbcData';
 
 export default function Dashboard() {
-  const { materials, loads, dimUnit } = useApp();
+  const { materials, loads, dimUnit, lang } = useApp();
   const { fc, fy, cover } = materials;
 
   const ec = Ec(fc);

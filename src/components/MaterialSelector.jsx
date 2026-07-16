@@ -4,7 +4,7 @@ import { CONCRETE_GRADES, STEEL_GRADES, COVER_OPTIONS } from '../utils/bnbcData'
 import { Ec, beta1 } from '../utils/structuralMath';
 
 export default function MaterialSelector() {
-  const { materials, setMaterials, stressUnit, toggleStressUnit, dimUnit } = useApp();
+  const { materials, setMaterials, stressUnit, toggleStressUnit, dimUnit, lang } = useApp();
   const { fc, fy, cover } = materials;
 
   const handleChange = (field, value) => setMaterials((prev) => ({ ...prev, [field]: value }));
@@ -22,7 +22,7 @@ export default function MaterialSelector() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🧱 Material Selection</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('mat.title', lang)}</h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">BNBC 2020 / ACI 318-19 material properties</p>
         </div>
         <div className="flex gap-2 flex-wrap">

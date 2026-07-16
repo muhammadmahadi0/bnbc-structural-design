@@ -7,7 +7,7 @@ import {
 } from '../utils/structuralMath';
 
 export default function ColumnDesign() {
-  const { materials, dimUnit } = useApp();
+  const { materials, dimUnit, lang } = useApp();
   const { fc, fy, cover } = materials;
 
   const [b, setB] = useState(400);
@@ -59,7 +59,7 @@ export default function ColumnDesign() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🏗️ Column Design</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('col.title', lang)}</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Axial capacity, biaxial bending & reinforcement per BNBC 2020</p>
       </div>
 

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useApp, dimDisplay, spanDisplay } from '../App';
+import { useApp, dimDisplay, spanDisplay, wDisplay } from '../App';
+import { t } from '../utils/translations';
 import {
   beamAsFromMu, beamShearDesign, selectRebar, barSpacing,
   effectiveDepth, AsMin, beamEstimate, beamDeflection,
 } from '../utils/structuralMath';
 
 export default function BeamDesign() {
-  const { materials, dimUnit } = useApp();
+  const { materials, dimUnit, lang } = useApp();
   const { fc, fy, cover } = materials;
 
   const [b, setB] = useState(300);
@@ -40,7 +41,7 @@ export default function BeamDesign() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">📐 Beam Design</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('beam.title', lang)}</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Flexural & shear reinforcement per BNBC 2020 / ACI 318-19</p>
       </div>
 
