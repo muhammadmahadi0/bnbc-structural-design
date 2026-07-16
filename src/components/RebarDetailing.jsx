@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useApp, dimDisplay, wDisplay, volDisplay } from '../App';
-import { t } from '../utils/translations';
+import { useApp, dimDisplay, spanDisplay, volDisplay, wDisplay } from '../App';
 import { selectRebar, barSpacing, rebarWeight, totalSteelWeight, concreteVolume } from '../utils/structuralMath';
 import { REBAR_SIZES } from '../utils/bnbcData';
 
 export default function RebarDetailing() {
-  const { materials, dimUnit, lang } = useApp();
+  const { materials, dimUnit } = useApp();
   const { cover } = materials;
 
   const [elementType, setElementType] = useState('slab');
@@ -54,7 +53,7 @@ export default function RebarDetailing() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('rebar.title', lang)}</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">🔄 Rebar Detailing & Estimation</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Steel area selection, spacing, weight and concrete volume per BNBC 2020</p>
       </div>
 

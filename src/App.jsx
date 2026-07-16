@@ -61,10 +61,6 @@ export default function App() {
   }, [darkMode]);
   useEffect(() => { setMobileSidebar(false); }, [activeTab]);
 
-  // Language (en / bn)
-  const [lang, setLang] = useState(() => localStorage.getItem('bnbc-lang') || 'en');
-  useEffect(() => { localStorage.setItem('bnbc-lang', lang); }, [lang]);
-
   // Stress unit (MPa / psi)
   const [stressUnit, setStressUnit] = useState(() => localStorage.getItem('bnbc-stress') || 'mpa');
   useEffect(() => { localStorage.setItem('bnbc-stress', stressUnit); }, [stressUnit]);
@@ -96,7 +92,6 @@ export default function App() {
   });
 
   const toggleDarkMode = useCallback(() => setDarkMode((p) => !p), []);
-  const toggleLang = useCallback(() => setLang((p) => (p === 'en' ? 'bn' : 'en')), []);
   const toggleStressUnit = useCallback(() => setStressUnit((p) => (p === 'mpa' ? 'psi' : 'mpa')), []);
   const toggleDimUnit = useCallback(() => setDimUnit((p) => (p === 'metric' ? 'imperial' : 'metric')), []);
 
@@ -105,7 +100,6 @@ export default function App() {
     materials, setMaterials,
     loads, setLoads,
     darkMode, toggleDarkMode,
-    lang, toggleLang,
     stressUnit, setStressUnit, toggleStressUnit,
     dimUnit, setDimUnit, toggleDimUnit,
     mobileSidebar, setMobileSidebar,
@@ -138,48 +132,26 @@ export default function App() {
 
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
-            {/* Mobile header */}
-            <div className="flex items-center justify-between mb-4 md:hidden">
-              <div className="flex items-center gap-3">
-                <button onClick={() => setMobileSidebar(true)}
-                  className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" aria-label="Menu">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-                <span className="font-bold text-sm text-slate-700 dark:text-slate-200">🏗️ BNBC 2020</span>
-              </div>
-              <button onClick={toggleLang}
-                className="px-2 py-1 text-xs font-semibold rounded-lg border transition-colors
-                  bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600
-                  text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600">
-                {lang === 'en' ? 'বাংলা' : 'English'}
+            <div className="flex items-center gap-3 mb-4 md:hidden">
+              <button onClick={() => setMobileSidebar(true)}
+                className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200" aria-label="Menu">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
-            </div>
-
-            {/* Desktop header — translate button at top-right */}
-            <div className="hidden md:flex justify-end mb-4">
-              <button onClick={toggleLang}
-                className="px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors
-                  bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600
-                  text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600">
-                {lang === 'en' ? '🇧🇩 বাংলা' : '🇬🇧 English'}
-              </button>
+              <span className="font-bold text-sm text-slate-700 dark:text-slate-200">🏗️ BNBC 2020</span>
             </div>
             {renderContent()}
           </div>
         </main>
 
-        {/* Floating controls — bottom-right corner */}
-        <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
-          {/* Dark mode toggle */}
-          <button onClick={toggleDarkMode}
-            className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all duration-300 hover:scale-110
-              bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-amber-300"
-            aria-label="Toggle dark mode">
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-        </div>
+        {/* Dark mode toggle */}
+        <button onClick={toggleDarkMode}
+          className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all duration-300 hover:scale-110
+            bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-amber-300"
+          aria-label="Toggle dark mode">
+          {darkMode ? '☀️' : '🌙'}
+        </button>
       </div>
     </AppContext.Provider>
   );

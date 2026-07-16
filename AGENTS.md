@@ -130,7 +130,6 @@ building-structural-design/
 ## Units & Conventions
 - **Internal:** lengths in mm, forces in kN, stresses in MPa
 - **Dual display:** MPa ↔ psi/ksi, mm ↔ in, m ↔ ft, kg ↔ lb, m³ ↔ ft³
-- **Language:** English ↔ বাংলা toggle (top-right corner, persists in localStorage)
 - **Dark mode:** Toggle at bottom-right corner (persists in localStorage)
 - **Mobile:** Responsive sidebar with hamburger overlay
 

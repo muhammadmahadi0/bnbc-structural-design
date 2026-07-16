@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp, spanDisplay } from '../App';
-import { t } from '../utils/translations';
 import {
   OCCUPANCY_LOADS, FINISH_LOADS, PARTITION_LOADS,
   WIND_SPEED_ZONES, EXPOSURE_CATEGORIES,
@@ -19,7 +18,7 @@ const r2 = (v, n = 2) => (v !== undefined && isFinite(v) ? Math.round(v * 10 ** 
 const emptySPT = () => ({ depth: 1.5, nValue: 15 });
 
 export default function LoadCalculator() {
-  const { loads, setLoads, dimUnit, lang } = useApp();
+  const { loads, setLoads, dimUnit } = useApp();
 
   const [selectedOccupancy, setSelectedOccupancy] = useState(OCCUPANCY_LOADS[0]);
   const [finishLoad, setFinishLoad] = useState(1.0);
@@ -86,7 +85,7 @@ export default function LoadCalculator() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t('load.title', lang)}</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">⚖️ Load Calculator</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Dead, Live, Wind & Seismic loads per BNBC 2020</p>
       </div>
 
