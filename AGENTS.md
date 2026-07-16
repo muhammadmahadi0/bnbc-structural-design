@@ -70,6 +70,7 @@ building-structural-design/
 - Min thickness per ACI 7.3.1.1: l/20 SS, l/24 1-cont, l/28 2-cont, l/10 cant
 - fy modification: h_adj = h_base × (0.4 + f_y/700)
 - One-way moment coefficients (1/8, 1/10, 1/14, 1/2)
+- ✅ **Two-way slab (ACI 13.6):** Direct Design Method → column strip & middle strip moments (X/Y), Mo_x/Mo_y, column strip widths, auto-detects one-way when Ly/Lx > 2
 - Iterative tension-controlled As (max 50 iterations, NaN-safe)
 - Temperature/shrinkage steel per ACI 24.4
 - Rebar selection + spacing in mm & inches
@@ -79,7 +80,8 @@ building-structural-design/
 - Min steel: 0.25√f'c/fy·b·d ≥ 1.4/fy·b·d per ACI 9.6.1.2
 - Max steel: ρ_max = 0.75ρ_bal (tension-controlled)
 - Shear: φVc = 0.75·0.17·√f'c·b·d per ACI 22.5
-- Stirrup spacing: Av·fyt·d / Vs, with max limits 0.5d, d/2, 600 mm
+- Stirrup spacing: Av·fyt·d / Vs, with max limits min(d/2, 600) / min(d/4, 300)
+- ✅ **Deflection check (ACI 24.2):** Ie (cracked), Mcr, Ma, immediate + long-term deflection, pass/fail per L/480 or L/240
 - Full bar + weight + concrete estimate per beam
 
 ### Module 5: 🏗️ Column Design
@@ -88,6 +90,8 @@ building-structural-design/
 - Reinforcement limits: min 1%, max 8% (tied) / 6% (spiral) per ACI 10.6.1
 - Biaxial Bresler interaction: (Mux/φMnx)^α + (Muy/φMny)^α ≤ 1.0
 - Tie spacing: min(16Ø_main, 48Ø_tie, b, h, 300 mm)
+- ✅ **PMM interaction curve:** 25+ points via strain compatibility (φPn_max → balance → pure bending), for ETABS Section Designer verification
+- ✅ **Slenderness check (ACI 6.2):** kLu/r, stability limit, Cm, Pc, δns, moment magnification
 
 ### Module 6: 🔄 Rebar Detailing
 - Optimal bar selection from Ø10–Ø40 (all standard BNBC sizes)
@@ -117,6 +121,10 @@ building-structural-design/
 | ACI 22.4.2 | Column axial capacity | ✅ Tied + spiral |
 | ACI 22.5 | Shear design | ✅ |
 | ACI 24.4 | Temp/shrinkage steel | ✅ |
+| ACI 24.3.2 | Flexural crack control spacing | ✅ Fixed |
+| ACI 13.6 | Two-way slab (Direct Design) | ✅ |
+| ACI 24.2 | Deflection (immediate + long-term) | ✅ |
+| ACI 6.2 | Column slenderness (kLu/r, δns) | ✅ |
 
 ## Units & Conventions
 - **Internal:** lengths in mm, forces in kN, stresses in MPa
