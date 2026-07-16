@@ -138,6 +138,7 @@ export default function App() {
 
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
+            {/* Mobile header */}
             <div className="flex items-center justify-between mb-4 md:hidden">
               <div className="flex items-center gap-3">
                 <button onClick={() => setMobileSidebar(true)}
@@ -148,13 +149,21 @@ export default function App() {
                 </button>
                 <span className="font-bold text-sm text-slate-700 dark:text-slate-200">🏗️ BNBC 2020</span>
               </div>
-
-              {/* Translate button — mobile */}
               <button onClick={toggleLang}
                 className="px-2 py-1 text-xs font-semibold rounded-lg border transition-colors
                   bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600
                   text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600">
                 {lang === 'en' ? 'বাংলা' : 'English'}
+              </button>
+            </div>
+
+            {/* Desktop header — translate button at top-right */}
+            <div className="hidden md:flex justify-end mb-4">
+              <button onClick={toggleLang}
+                className="px-3 py-1.5 text-sm font-semibold rounded-lg border transition-colors
+                  bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600
+                  text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600">
+                {lang === 'en' ? '🇧🇩 বাংলা' : '🇬🇧 English'}
               </button>
             </div>
             {renderContent()}
@@ -163,14 +172,6 @@ export default function App() {
 
         {/* Floating controls — bottom-right corner */}
         <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
-          {/* Language toggle */}
-          <button onClick={toggleLang}
-            className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-sm font-bold transition-all duration-300 hover:scale-110
-              bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-200"
-            aria-label="Toggle language">
-            {lang === 'en' ? 'বাং' : 'EN'}
-          </button>
-
           {/* Dark mode toggle */}
           <button onClick={toggleDarkMode}
             className="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl transition-all duration-300 hover:scale-110
