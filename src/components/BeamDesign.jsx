@@ -28,7 +28,7 @@ export default function BeamDesign() {
   // Deflection check
   const As_provided = bottomBars ? bottomBars.As_provided : (topBars?.As_provided || 600);
   const As_req = flexure?.As_req || 400;
-  const deflCheck = showDefl ? beamDeflection(b, h, span_m * 1000, fc, fy, As_provided, As_req, wService, 0, wSustained, roofBeam ? 1 : 2) : null;
+  const deflCheck = showDefl ? beamDeflection(b, h, span_m * 1000, fc, fy, As_provided, As_req, wService, 0, wSustained, roofBeam ? 1 : 2, cover, stirrupDia) : null;
 
   const weight = beamEstimate(b, h, span_m, fc, fy, Mu, Vu, cover, stirrupDia, mainBarDia);
 

@@ -78,7 +78,7 @@ export function factoredLoad(DL, SDL, LL, WL = 0, EQ = 0) {
     '1.2D + 1.6L + 0.5W': 1.2 * (DL + SDL) + 1.6 * LL + 0.5 * WL,
     '1.2D + 1.0W + 1.0L': 1.2 * (DL + SDL) + 1.0 * WL + 1.0 * LL,
     '0.9D + 1.0W': 0.9 * (DL + SDL) + 1.0 * WL,
-    '1.2D + 1.0E + 1.0L': 1.2 * (DL + SDL) + 1.0 * EQ + 1.0 * LL * 0.75,
+    '1.2D + 1.0E + 0.75L': 1.2 * (DL + SDL) + 1.0 * EQ + 1.0 * LL * 0.75,
     '0.9D + 1.0E': 0.9 * (DL + SDL) + 1.0 * EQ,
   };
 }
@@ -175,7 +175,8 @@ export function seismicBaseShear(SDS, SD1, R, Ie, W, T = 0.5) {
  * RC shear wall:    Ct = 0.0486,  x = 0.75
  */
 export function approxPeriod(hn_meters, system = 'frame') {
-  const ct = system === 'frame' ? 0.0466 : 0.0486;
+  // BNBC 2020 / ASCE 7-16 — Ta = Ct × hn^x
+  const ct = system === 'frame' ? 0.0466 : 0.0488;
   const x = system === 'frame' ? 0.9 : 0.75;
   return ct * Math.pow(hn_meters, x);
 }
@@ -341,8 +342,8 @@ export function beamShearDesign(Vu_kN, b, d, fc, fy, stirrupLegs = 2, stirrupDia
     // Compute spacing
     const s_calc = Av * fy * d / (Vs_req * 1000);
     const s_max1 = 0.5 * d;
-    const s_max2 = Vs_req > 0.33 * Math.sqrt(fc) * b * d / 1000 ? d / 4 : d / 2;
-    s = Math.min(s_calc, s_max1, s_max2, 600);
+    const s_max2 = Vs_req > 0.33 * Math.sqrt(fc) * b * d / 1000 ? Math.min(d / 4, 300) : Math.min(d / 2, 600);
+    s = Math.min(s_calc, s_max2);
     if (s < 25) {
       return { error: 'Spacing too small — increase beam dimensions or stirrup diameter' };
     }
@@ -639,8 +640,8 @@ export function columnSlenderness(b, h, kFactor, Lu_mm, M1_kNm, M2_kNm, Pu_kN, f
 //  11. BEAM — DEFLECTION CHECK (ACI 24.2)
 // ─────────────────────────────────────────────────────────
 
-export function beamDeflection(b, h, span_mm, fc, fy, As_prov, As_req, w_service_kNm, w_dead_kNm, w_sus_kNm, R = 2) {
-  const d = h - 60;
+export function beamDeflection(b, h, span_mm, fc, fy, As_prov, As_req, w_service_kNm, w_dead_kNm, w_sus_kNm, R = 2, cover = 30, stirrupDia = 10) {
+  const d = Math.max(h - cover - stirrupDia - 20 / 2, 50);
   const f_r = 0.62 * Math.sqrt(fc);
   const Ec = 4700 * Math.sqrt(fc);
   const Es = 200000;

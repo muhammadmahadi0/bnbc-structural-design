@@ -10,11 +10,11 @@
 // 1.  CONCRETE GRADES (BNBC 2020 Table 6.2.1)
 // ──────────────────────────────────────────────
 export const CONCRETE_GRADES = [
-  { label: 'C-16 (16 MPa ≈ 2300 psi)', fc: 16 },
-  { label: 'C-20 (20 MPa ≈ 2900 psi)', fc: 20 },
-  { label: 'C-24 (24 MPa ≈ 3480 psi)', fc: 24 },
-  { label: 'C-28 (28 MPa ≈ 4060 psi)', fc: 28 },
-  { label: 'C-32 (32 MPa ≈ 4640 psi)', fc: 32 },
+  // BNBC 2020 Table 6.2.1 — specified compressive strength (cylinder f'c)
+  { label: 'C-16 (16 MPa)', fc: 16 },
+  { label: 'C-20 (20 MPa)', fc: 20 },
+  { label: 'C-25 (25 MPa ≈ 3600 psi)', fc: 25 },
+  { label: 'C-30 (30 MPa ≈ 4350 psi)', fc: 30 },
   { label: 'C-35 (35 MPa ≈ 5070 psi)', fc: 35 },
   { label: 'C-40 (40 MPa ≈ 5800 psi)', fc: 40 },
 ];
@@ -298,11 +298,12 @@ export function getSDC(sds, sd1) {
 // 8b. SPT-N to Site Class converter
 // ──────────────────────────────────────────────
 export function sptToSiteClass(navg) {
-  if (navg >= 50) return { siteClass: 'SA', label: 'SA — Hard Rock' };
-  if (navg >= 16) return { siteClass: 'SB', label: 'SB — Rock' };
-  if (navg >= 8) return { siteClass: 'SC', label: 'SC — Very Dense Soil / Soft Rock' };
-  if (navg >  0) return { siteClass: 'SD', label: 'SD — Stiff Soil' };
-  return { siteClass: 'SE', label: 'SE — Soft Soil' };
+  // BNBC 2020 Table 6.2.29 (SPT-N criteria for cohesionless soils)
+  // SA (Hard Rock) requires Vs > 1500 m/s — cannot be determined from SPT-N alone
+  if (navg > 50) return { siteClass: 'SB', label: 'SB — Rock (N > 50)' };
+  if (navg > 15) return { siteClass: 'SC', label: 'SC — Very Dense Soil (15 < N ≤ 50)' };
+  if (navg >  4) return { siteClass: 'SD', label: 'SD — Stiff Soil (5 ≤ N ≤ 15)' };
+  return { siteClass: 'SE', label: 'SE — Soft Soil (N ≤ 5)' };
 }
 
 export const RESPONSE_MOD_FACTORS = [
@@ -382,8 +383,13 @@ export function getModulusOfRupture(fc) {
 // 14. FLEXURAL CRACK CONTROL — max spacing
 // ──────────────────────────────────────────────
 export function getMaxBarSpacing(cc, fy) {
-  // ACI 318-19 Table 24.3.2 — maximum spacing for crack control
-  return Math.min(3 * 25.4, 380 * (280 / fy) - 2.5 * cc);
+  // ACI 318-19 §24.3.2 — maximum flexural bar spacing for crack control
+  // s_max = 380×(280/fs) − 2.5×cc  ≤  300×(280/fs)
+  // fs = 0.6×fy (service load stress approximation)
+  const fs = 0.6 * fy;
+  const s = 380 * (280 / fs) - 2.5 * cc;
+  const cap = 300 * (280 / fs);
+  return Math.min(s, cap);
 }
 
 // ──────────────────────────────────────────────
