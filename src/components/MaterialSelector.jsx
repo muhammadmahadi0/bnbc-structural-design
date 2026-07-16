@@ -1,4 +1,5 @@
 import React from 'react';
+import { t } from '../utils/translations';
 import { useApp, mpaToPsi, mpaToKsi, dimDisplay } from '../App';
 import { CONCRETE_GRADES, STEEL_GRADES, COVER_OPTIONS } from '../utils/bnbcData';
 import { Ec, beta1 } from '../utils/structuralMath';

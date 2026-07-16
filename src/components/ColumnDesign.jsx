@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp, dimDisplay, spanDisplay, volDisplay } from '../App';
+import { t } from '../utils/translations';
 import {
   columnAxialCapacity, columnReinfLimits, biaxialInteraction,
   columnPMMCurve, columnSlenderness,
