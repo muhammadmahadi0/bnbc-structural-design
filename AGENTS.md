@@ -57,9 +57,13 @@ building-structural-design/
 - **Seismic Load (BNBC Sec 2.5/6.2):**
   - 10 Bangladesh regions (Dhaka, Comilla, Chittagong, Sylhet, Rajshahi, Khulna, Barisal, Rangpur, Mymensingh, Tangail)
   - 5 site classes SA–SE with Fa/Fv interpolation per Tables 6.2.31–32
+  - **SPT-N → Site Class** auto-conversion (input depth + N-values, auto-calc N_avg)
+  - **Seismic Design Category (SDC)** per BNBC Table 6.6.1 (A → D based on SDS/SD1)
+  - **Ω₀ (Overstrength factor) & Cd (Deflection amplification)** added to all lateral systems
   - SDS = ⅔·Fa·Ss, SD1 = ⅔·Fv·S1
   - Cs = SDS/(R/Ie) ≤ SD1/(T·R/Ie) ≥ 0.044·SDS·Ie ≥ 0.01
   - Approximate period Ta = 0.0466·hn⁰·⁹
+  - **Building Weight:** Manual entry or auto-calc from floor area × (DL + 0.25LL) × stories
 - **LRFD Combos:** 1.4D+1.6L, 1.2D+1.6L+0.5W, 1.2D+1.0W+1.0L, 0.9D+1.0W, 1.2D+1.0E+0.75L, 0.9D+1.0E
 
 ### Module 3: 🏛️ Slab Design

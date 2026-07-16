@@ -285,14 +285,34 @@ export const IMPORTANCE_FACTORS = [
   { label: 'I = 1.50 — Essential / Post-disaster', ie: 1.5 },
 ];
 
+// ──────────────────────────────────────────────
+// 8a. SEISMIC DESIGN CATEGORY (BNBC 2020 Table 6.6.1)
+// ──────────────────────────────────────────────
+export function getSDC(sds, sd1) {
+  let bySDS = sds < 0.167 ? 'A' : sds < 0.33 ? 'B' : sds < 0.50 ? 'C' : 'D';
+  let bySD1 = sd1 < 0.067 ? 'A' : sd1 < 0.133 ? 'B' : sd1 < 0.20 ? 'C' : 'D';
+  return bySDS > bySD1 ? bySDS : bySD1;
+}
+
+// ──────────────────────────────────────────────
+// 8b. SPT-N to Site Class converter
+// ──────────────────────────────────────────────
+export function sptToSiteClass(navg) {
+  if (navg >= 50) return { siteClass: 'SA', label: 'SA — Hard Rock' };
+  if (navg >= 16) return { siteClass: 'SB', label: 'SB — Rock' };
+  if (navg >= 8) return { siteClass: 'SC', label: 'SC — Very Dense Soil / Soft Rock' };
+  if (navg >  0) return { siteClass: 'SD', label: 'SD — Stiff Soil' };
+  return { siteClass: 'SE', label: 'SE — Soft Soil' };
+}
+
 export const RESPONSE_MOD_FACTORS = [
-  { label: 'R = 3 — Ordinary RC Moment Frame (OMF)', r: 3 },
-  { label: 'R = 5 — Intermediate RC Moment Frame (IMF)', r: 5 },
-  { label: 'R = 8 — Special RC Moment Frame (SMRF)', r: 8 },
-  { label: 'R = 3 — Ordinary Shear Wall', r: 3 },
-  { label: 'R = 6 — Intermediate Shear Wall', r: 6 },
-  { label: 'R = 7 — Special Shear Wall', r: 7 },
-  { label: 'R = 2 — Bearing Wall System', r: 2 },
+  { label: 'R = 3 — OMF (Ordinary Moment Frame)', r: 3, omega: 3, cd: 2.5 },
+  { label: 'R = 5 — IMF (Intermediate Moment Frame)', r: 5, omega: 3, cd: 4.5 },
+  { label: 'R = 8 — SMRF (Special Moment Frame)', r: 8, omega: 3, cd: 5.5 },
+  { label: 'R = 3 — Ordinary Shear Wall', r: 3, omega: 2.5, cd: 2.5 },
+  { label: 'R = 6 — Intermediate Shear Wall', r: 6, omega: 2.5, cd: 4 },
+  { label: 'R = 7 — Special Shear Wall', r: 7, omega: 2.5, cd: 5 },
+  { label: 'R = 2 — Bearing Wall System', r: 2, omega: 2.5, cd: 2 },
 ];
 
 // ──────────────────────────────────────────────
