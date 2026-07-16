@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp, dimDisplay, spanDisplay } from '../App';
 import {
   beamAsFromMu, beamShearDesign, selectRebar, barSpacing,
-  effectiveDepth, AsMin, beamEstimate,
+  effectiveDepth, AsMin, beamEstimate, beamDeflection,
 } from '../utils/structuralMath';
 
 export default function BeamDesign() {
@@ -25,6 +25,11 @@ export default function BeamDesign() {
   const asMin = AsMin(fc, fy, b, d);
   const topBars = selectRebar(asMin, [10, 12, 16, 20]);
   const bottSpacing = bottomBars ? barSpacing(b, cover, stirrupDia, bottomBars.dia, bottomBars.n, 1) : null;
+  // Deflection check
+  const As_provided = bottomBars ? bottomBars.As_provided : (topBars?.As_provided || 600);
+  const As_req = flexure?.As_req || 400;
+  const deflCheck = showDefl ? beamDeflection(b, h, span_m * 1000, fc, fy, As_provided, As_req, wService, 0, wSustained, roofBeam ? 1 : 2) : null;
+
   const weight = beamEstimate(b, h, span_m, fc, fy, Mu, Vu, cover, stirrupDia, mainBarDia);
 
   const bw = dimDisplay(b, dimUnit);
@@ -152,8 +157,51 @@ export default function BeamDesign() {
             )}
             {shear && !shear.error && <div className="mt-2 text-xs"><span className={`badge ${shear.designStatus.includes('Minimum') ? 'badge-warning' : 'badge-success'}`}>{shear.designStatus}</span></div>}
           </div>
+          {/* Deflection Check */}
+          <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300">📏 Deflection Check (ACI 24.2)</h4>
+              <button onClick={() => setShowDefl(!showDefl)} className={`text-xs px-2 py-1 rounded ${showDefl ? 'bg-blue-100 text-blue-700 dark:bg-blue-800/50 dark:text-blue-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                {showDefl ? '● Checked' : '○ Check'}
+              </button>
+            </div>
+            {showDefl && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="input-group"><label>w<sub>service</sub> (kN/m)</label>
+                    <input type="number" step={0.5} min={0} value={wService} onChange={(e) => setWService(Number(e.target.value))} />
+                  </div>
+                  <div className="input-group"><label>w<sub>sustained</sub> (kN/m)</label>
+                    <input type="number" step={0.5} min={0} value={wSustained} onChange={(e) => setWSustained(Number(e.target.value))} />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <input type="checkbox" checked={roofBeam} onChange={() => setRoofBeam(!roofBeam)} /> Roof beam (L/240 instead of L/480)
+                </label>
+                {deflCheck ? (
+                  <div className={`rounded-lg p-3 space-y-1 text-xs ${deflCheck.pass ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
+                    <div className="flex justify-between"><span className="text-slate-500">I<sub>e</sub></span><span className="font-mono font-bold">{deflCheck.Ie} mm⁴</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">I<sub>e</sub>/I<sub>g</sub></span><span className="font-mono">{deflCheck.Ie_ratio}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">M<sub>cr</sub></span><span className="font-mono">{deflCheck.Mcr} kN·m</span><span className="text-xs text-slate-400"> / </span><span className="font-mono">{deflCheck.Ma} kN·m</span></div>
+                    <hr className="border-slate-200 dark:border-slate-700" />
+                    <div className="flex justify-between font-semibold"><span>Δ<sub>immediate</sub></span><span className="font-mono">{deflCheck.delta_inst} mm</span></div>
+                    <div className="flex justify-between font-semibold"><span>Δ<sub>long-term</sub></span><span className={`font-mono ${deflCheck.pass ? 'text-green-600' : 'text-red-600'}`}>{deflCheck.delta_long} mm</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Allowable</span><span className="font-mono">{deflCheck.allowable} mm</span></div>
+                    <div className="flex justify-between font-bold pt-1 border-t border-slate-200 dark:border-slate-700">
+                      <span>Status</span>
+                      <span className={deflCheck.pass ? 'text-green-600' : 'text-red-600'}>{deflCheck.pass ? '✓ PASS' : '✗ FAIL'}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">λ<sub>Δ</sub> = {deflCheck.lambda_delta} (sustained load factor, {roofBeam ? 'L/240' : 'L/480'} limit)</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400">Enter service load values above</p>
+                )}
+              </div>
+            )}
+          </div>
 
-          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 mt-4">
+          {/* Estimate */}
+          <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
             <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300 mb-2">📦 Estimate ({bSpan.val} {bSpan.unit} beam)</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
               <div><span className="text-slate-500 dark:text-slate-400">Steel</span><p className="font-bold font-mono">{(weight?.steelWeight_kg ?? 0)} kg ({((weight?.steelWeight_kg ?? 0) * 2.20462).toFixed(1)} lb)</p></div>

@@ -100,16 +100,49 @@ export default function SlabDesign() {
             <div className="stat-box"><p className="result-label">Design M<sub>u</sub></p><p className="result-value">{Mu_design.toFixed(2)}<span className="text-sm font-normal"> kN·m</span></p></div>
           </div>
 
-          {moments && (
+          {moments && isOneWay && (
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                <p className="text-xs text-green-700 dark:text-green-400 uppercase font-semibold">Positive M<sub>mid</sub></p>
+                <p className="text-xs text-green-700 dark:text-green-400 uppercase font-semibold">Pos. M<sub>mid</sub></p>
                 <p className="text-lg font-bold text-green-800 dark:text-green-300">{moments.positive_mid.toFixed(2)} kN·m</p>
               </div>
               <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
-                <p className="text-xs text-red-700 dark:text-red-400 uppercase font-semibold">Negative M<sub>support</sub></p>
+                <p className="text-xs text-red-700 dark:text-red-400 uppercase font-semibold">Neg. M<sub>support</sub></p>
                 <p className="text-lg font-bold text-red-800 dark:text-red-300">{Math.abs(moments.negative_support).toFixed(2)} kN·m</p>
               </div>
+            </div>
+          )}
+
+          {moments && !isOneWay && moments.type === 'two-way' && (
+            <div className="mb-6 space-y-3">
+              <p className="text-xs text-slate-500">Ly/Lx = {moments.ratio} Mo_x = {moments.Mo_x} Mo_y = {moments.Mo_y} kN·m</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">X-direction — col strip {moments.colStripWidth_x}m</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <div>-M col: <strong>{moments.negative.column_strip_x}</strong></div>
+                    <div>-M mid: {moments.negative.middle_strip_x}</div>
+                    <div>+M col: <strong>{moments.positive.column_strip_x}</strong></div>
+                    <div>+M mid: {moments.positive.middle_strip_x}</div>
+                  </div>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                  <p className="text-xs font-semibold text-purple-700 mb-1">Y-direction — col strip {moments.colStripWidth_y}m</p>
+                  <div className="grid grid-cols-2 gap-1 text-xs">
+                    <div>-M col: <strong>{moments.negative.column_strip_y}</strong></div>
+                    <div>-M mid: {moments.negative.middle_strip_y}</div>
+                    <div>+M col: <strong>{moments.positive.column_strip_y}</strong></div>
+                    <div>+M mid: {moments.positive.middle_strip_y}</div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400">Design for max moment: {Mu_design} kN·m (column strip negative)</p>
+            </div>
+          )}
+
+          {moments && !isOneWay && moments.type === 'one-way' && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mb-4">
+              <p className="text-sm font-semibold text-amber-700">⚠️ {moments.warning}</p>
             </div>
           )}
 

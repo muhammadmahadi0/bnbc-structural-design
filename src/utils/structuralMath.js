@@ -553,3 +553,168 @@ export function beamEstimate(b, h, length_m, fc, fy, Mu, Vu, cover, stirrupDia, 
     d,
   };
 }
+
+// ─────────────────────────────────────────────────────────
+//  9.  COLUMN — PMM INTERACTION CURVE
+// ─────────────────────────────────────────────────────────
+
+export function columnPMMCurve(b, h, fc, fy, cover, mainDia, tieDia, nTotalBars, type = 'tied') {
+  const d = effectiveDepth(h, cover, mainDia, tieDia);
+  const dPrime = cover + tieDia + mainDia / 2;
+  const Ag = b * h;
+  const Abar = Math.PI * mainDia * mainDia / 4;
+  const Ast = nTotalBars * Abar;
+  const As = Ast / 2;
+  const AsComp = Ast / 2;
+  const b1 = beta1(fc);
+  const Es = 200000;
+  const points = [];
+  const Po = 0.85 * fc * (Ag - Ast) + fy * Ast;
+  const reduction = type === 'spiral' ? 0.85 : 0.80;
+  points.push({ Pn: r2(reduction * Po / 1000, 1), Mn: 0, label: 'phiPn_max' });
+  const steps = Array.from({ length: 25 }, (_, i) => h * (1.6 - i * 1.6 / 24));
+  for (const c of steps) {
+    if (c <= 5) continue;
+    const a = b1 * Math.min(c, h);
+    const a_eff = Math.min(a, h);
+    const Cc = 0.85 * fc * a_eff * b / 1000;
+    const yc = Math.max(h / 2 - a_eff / 2, 0);
+    const epsComp = 0.003 * (c - dPrime) / c;
+    const fsComp = Math.min(Math.max(epsComp * Es, -fy), fy);
+    const Cs = AsComp * fsComp / 1000;
+    const ys = h / 2 - dPrime;
+    const epsTens = 0.003 * (d - c) / c;
+    const fsTens = Math.max(Math.min(epsTens * Es, fy), -fy);
+    const Ts = As * fsTens / 1000;
+    const yt = d - h / 2;
+    const Pn = Cc + Cs + Ts;
+    const Mn = (Cc * yc + Cs * ys - Ts * yt) / 1000;
+    if (points.length === 1 || Math.abs(Pn - points[points.length - 1].Pn) > 10) {
+      let label = '';
+      if (Math.abs(epsComp - 0.00207) < 0.0005) label = 'Balance point';
+      points.push({ Pn: r2(Pn, 1), Mn: r2(Mn, 2), label, epsTens: r2(epsTens, 5) });
+    }
+    if (epsTens > 0.005) break;
+  }
+  const MuPure = 0.9 * As * fy * (d - dPrime) / 1e6;
+  points.push({ Pn: 0, Mn: r2(MuPure, 2), label: 'Pure Bending' });
+  return points;
+}
+
+// ─────────────────────────────────────────────────────────
+//  10. COLUMN — SLENDERNESS CHECK (ACI 6.2)
+// ─────────────────────────────────────────────────────────
+
+export function columnSlenderness(b, h, kFactor, Lu_mm, M1_kNm, M2_kNm, Pu_kN, fc, Ast) {
+  const r = 0.3 * h;
+  const kLu_r = kFactor * Lu_mm / r;
+  const M1 = Math.abs(M1_kNm);
+  const M2 = Math.abs(M2_kNm);
+  const M2_smaller = Math.min(M1, M2);
+  const M2_larger = Math.max(M1, M2);
+  const M1M2 = M2_larger > 0 ? M2_smaller / M2_larger : 1.0;
+  const limit = Math.max(34 - 12 * M1M2, 40);
+  const isSlender = kLu_r > limit;
+  const Ec = 4700 * Math.sqrt(fc);
+  const Ig = b * h * h * h / 12;
+  const EI = 0.25 * Ec * Ig / 1000;
+  const Pc = Math.PI * Math.PI * EI / (kFactor * Lu_mm) ** 2;
+  const Cm = Math.max(0.6 + 0.4 * M1M2, 0.4);
+  const denominator = 1 - Pu_kN / (0.75 * Pc);
+  const delta_ns = denominator > 0.1 ? Math.max(Cm / denominator, 1.0) : 1.0;
+  const Mu_design = isSlender ? r2(M2_larger * delta_ns, 2) : r2(M2_larger, 2);
+  return {
+    kLu_r: r2(kLu_r, 1),
+    limit: r2(limit, 1),
+    isSlender,
+    Cm: r2(Cm, 3),
+    Pc: r2(Pc, 1),
+    delta_ns: r2(delta_ns, 4),
+    Mu_initial: r2(M2_larger, 2),
+    Mu_design,
+  };
+}
+
+// ─────────────────────────────────────────────────────────
+//  11. BEAM — DEFLECTION CHECK (ACI 24.2)
+// ─────────────────────────────────────────────────────────
+
+export function beamDeflection(b, h, span_mm, fc, fy, As_prov, As_req, w_service_kNm, w_dead_kNm, w_sus_kNm, R = 2) {
+  const d = h - 60;
+  const f_r = 0.62 * Math.sqrt(fc);
+  const Ec = 4700 * Math.sqrt(fc);
+  const Es = 200000;
+  const n = Es / Ec;
+  const Ig = b * h * h * h / 12;
+  const yt = h / 2;
+  const Mcr = f_r * Ig / yt / 1e6;
+  const rho = As_prov / (b * d);
+  const k = Math.sqrt(2 * rho * n + (rho * n) ** 2) - rho * n;
+  const Icr = b * (k * d) ** 3 / 3 + n * As_prov * (d - k * d) ** 2;
+  const Ma = w_service_kNm * (span_mm / 1000) ** 2 / 8;
+  const ratio = Math.min(Mcr / Math.max(Ma, 0.001), 1);
+  const Ie = (ratio ** 3) * Ig + (1 - ratio ** 3) * Icr;
+  const w_per_mm = w_service_kNm * 1000 / 1000;
+  const delta_inst = 5 * w_per_mm * Math.pow(span_mm, 4) / (384 * Ec * Ie);
+  const xi = 2.0;
+  const rhoComp = As_prov > 0 ? As_req / (b * d) : 0;
+  const lambda_delta = xi / (1 + 50 * rhoComp);
+  const delta_sus = delta_inst * (w_sus_kNm / Math.max(w_service_kNm, 0.001));
+  const delta_long = delta_inst + lambda_delta * delta_sus;
+  const allowVal = R === 2 ? span_mm / 480 : span_mm / 240;
+  return {
+    Ie: r2(Ie, 0), Icr: r2(Icr, 0), Ig: r2(Ig, 0),
+    Mcr: r2(Mcr, 3), Ma: r2(Ma, 3),
+    Ie_ratio: Math.min(ratio ** 3, 1).toFixed(3),
+    delta_inst: r2(delta_inst, 2),
+    delta_long: r2(delta_long, 2),
+    allowable: r2(allowVal, 1),
+    pass: delta_long <= allowVal,
+    lambda_delta: r2(lambda_delta, 3),
+  };
+}
+
+// ─────────────────────────────────────────────────────────
+//  12. SLAB — TWO-WAY MOMENT DISTRIBUTION (ACI 13.6)
+// ─────────────────────────────────────────────────────────
+
+export function twoWaySlabMoments(Lx, Ly, w_u, edgeCondX = 'continuous', edgeCondY = 'continuous') {
+  const ratio = Ly / Math.max(Lx, 0.1);
+  if (ratio > 2) {
+    return {
+      type: 'one-way',
+      ratio: r2(ratio, 2),
+      warning: 'Ly/Lx > 2 — design as one-way slab',
+      positive_mid: r2(w_u * Lx * Lx / 8, 2),
+      negative_support: r2(w_u * Lx * Lx / 8, 2),
+    };
+  }
+  const Mo_x = w_u * Ly * Lx ** 2 / 8;
+  const Mo_y = w_u * Lx * Ly ** 2 / 8;
+  const colStripWidth_x = Math.min(Lx / 4, Ly / 4) * 2;
+  const colStripWidth_y = Math.min(Lx / 4, Ly / 4) * 2;
+  let Mneg, Mpos;
+  if (edgeCondX === 'simply_supported') {
+    Mneg = { col_x: 0, mid_x: 0, col_y: 0, mid_y: 0 };
+    Mpos = { col_x: 0.60 * Mo_x, mid_x: 0.40 * Mo_x, col_y: 0.60 * Mo_y, mid_y: 0.40 * Mo_y };
+  } else if (edgeCondX === 'exterior') {
+    Mneg = { col_x: 0.26 * Mo_x * 0.75, mid_x: 0.26 * Mo_x * 0.25, col_y: 0.26 * Mo_y * 0.75, mid_y: 0.26 * Mo_y * 0.25 };
+    Mpos = { col_x: 0.52 * Mo_x * 0.60, mid_x: 0.52 * Mo_x * 0.40, col_y: 0.52 * Mo_y * 0.60, mid_y: 0.52 * Mo_y * 0.40 };
+  } else {
+    Mneg = { col_x: 0.35 * Mo_x * 0.75, mid_x: 0.35 * Mo_x * 0.25, col_y: 0.35 * Mo_y * 0.75, mid_y: 0.35 * Mo_y * 0.25 };
+    Mpos = { col_x: 0.30 * Mo_x * 0.60, mid_x: 0.30 * Mo_x * 0.40, col_y: 0.30 * Mo_y * 0.60, mid_y: 0.30 * Mo_y * 0.40 };
+  }
+  return {
+    type: 'two-way',
+    ratio: r2(ratio, 2), Mo_x: r2(Mo_x, 2), Mo_y: r2(Mo_y, 2),
+    colStripWidth_x: r2(colStripWidth_x, 2), colStripWidth_y: r2(colStripWidth_y, 2),
+    negative: {
+      column_strip_x: r2(Mneg.col_x, 2), middle_strip_x: r2(Mneg.mid_x, 2),
+      column_strip_y: r2(Mneg.col_y, 2), middle_strip_y: r2(Mneg.mid_y, 2),
+    },
+    positive: {
+      column_strip_x: r2(Mpos.col_x, 2), middle_strip_x: r2(Mpos.mid_x, 2),
+      column_strip_y: r2(Mpos.col_y, 2), middle_strip_y: r2(Mpos.mid_y, 2),
+    },
+  };
+}
