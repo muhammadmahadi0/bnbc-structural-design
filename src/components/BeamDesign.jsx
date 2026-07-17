@@ -17,6 +17,10 @@ export default function BeamDesign() {
   const [mainBarDia, setMainBarDia] = useState(20);
   const [stirrupDia, setStirrupDia] = useState(10);
   const [stirrupLegs, setStirrupLegs] = useState(2);
+  const [showDefl, setShowDefl] = useState(false);
+  const [wService, setWService] = useState(10);
+  const [wSustained, setWSustained] = useState(6);
+  const [roofBeam, setRoofBeam] = useState(false);
 
   const d = effectiveDepth(h, cover, mainBarDia, stirrupDia);
   const flexure = beamAsFromMu(Mu, b, d, fc, fy);
