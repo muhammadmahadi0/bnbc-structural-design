@@ -106,8 +106,8 @@ export default function MaterialSelector() {
                 const o = COVER_OPTIONS.find((c) => c.value === Number(e.target.value));
                 handleChange('cover', Number(e.target.value)); handleChange('coverLabel', o?.label || '');
               }}>
-                {COVER_OPTIONS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                {COVER_OPTIONS.map((c, i) => (
+                  <option key={`${c.value}-${i}`} value={c.value}>{c.label}</option>
                 ))}
               </select>
             </div>
